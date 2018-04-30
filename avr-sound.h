@@ -1,4 +1,17 @@
-#ifndef __AVRSOUND_H__
+/*
+ * AVR Sound library
+ * avr-sound-example.c
+ * 
+ * Simple waveform generation example. You will need a R-R2 Resistor ladder network to get n-bit sound.
+ * Tested on AtMega328P-PU with bitrates of 1kHz and 40kHz @ 16MHz external crystal oscillator
+ * If you want to use this with internal 8MHz oscillator, remember to change fuses in Makefile.
+ * Fuses works straight on Arduino Uno board, but feel free to test it standalone as well (with custom fuses).
+ * 
+ * Authors:
+ *  Ville-Pekka Lahti <ville-pekka.lahti@hotmail.com>
+ */
+
+ #ifndef __AVRSOUND_H__
 #define __AVRSOUND_H__
 
 #include <avr/interrupt.h>
