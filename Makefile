@@ -19,14 +19,14 @@ PRJ = main
 # avr mcu
 MCU = atmega328p
 # mcu clock frequency
-CLK = 16000000
+F_CPU = 16000000
 # avr programmer (and port if necessary)
 # e.g. PRG = usbtiny -or- PRG = arduino -P /dev/tty.usbmodem411
 PRG = avrisp2
 # fuse values for avr: low, high, and extended
 # these values are from an Arduino Uno (ATMega328P)
 # see http://www.engbedded.com/fusecalc/ for other MCUs and options
-LFU = 0xee
+LFU = 0xef
 HFU = 0xD9
 EFU = 0xfd
 # program source files (not including external libraries)
@@ -45,7 +45,7 @@ EXT =
 # include path
 INCLUDE := $(foreach dir, $(EXT), -I$(dir))
 # c flags
-CFLAGS    = -std=c99 -Wall -Os -DF_CPU=$(CLK) -mmcu=$(MCU) $(INCLUDE)
+CFLAGS    = -std=c99 -Wall -Os -DF_CPU=$(F_CPU) -mmcu=$(MCU) $(INCLUDE)
 # any aditional flags for c++
 CPPFLAGS =
 

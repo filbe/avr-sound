@@ -15,23 +15,52 @@
 #include <util/delay.h>
 #include "avr-sound.h"
 
+uint8_t song[] = {
+	48, 48, 60, 60, 48, 48, 60, 60,
+	43, 43, 55, 55, 43, 41, 39, 38,
+	36, 36, 48, 48, 36, 36, 48, 48,
+	43, 43, 43, 43, 43, 41, 39, 38,
+};
+uint8_t song2[] = {
+	75, 77, 75, 74, 72, 75, 74, 72,
+	71, 72, 74, 71, 67, 69, 71, 67,
+	72, 71, 72, 74, 75, 74, 75, 77, 
+	79, 78, 79, 78, 79, 80, 79, 77,
+};
+
+
+uint8_t song3[] = {
+	87, 94, 99, 94, 87, 94, 99, 94,
+	82, 89, 94, 89, 82, 89, 94, 89,
+	87, 94, 99, 94, 87, 94, 99, 94,
+	82, 89, 94, 89, 82, 89, 94, 89,
+};
+
+float midi[100];
 int main() 
 {
-	avrsound_init();
+	for (float i=0;i<132;i+=1.0) {
+		midi[(uint8_t)(i)] = pow(2.0, (i-69.0)*0.083333)*440.0;
+	}
 	sei();
-	avrsound_set_pcm_length(1024);
-	float a=0;
-	avrsound_buffer_clean();
-	float c = 0;
-	DDRB = 0;
+	avrsound_init();
+	
+	avrsound_sample_init(256, 440.0);
+
+	for (uint16_t b=0;b<256;b++) {
+		avrsound_setbuffer(b, (uint8_t)(sin(b/256.0*M_PI)*127.5+127.5));
+	}
+
+	uint8_t c = 0;
+
+
+
 	while(1) {
-		a=0;
-		for (uint16_t b=0;b<1024;b++) {
-			avrsound_buffer_write_ring((sin(a)*127.5+127.5));
-			a+=0.1;
-		}
-		c = c + 3.1;
-		_delay_ms(50);
+		avrsound_set_hz(0, midi[song[c % sizeof(song)]]);
+		avrsound_set_hz(1, midi[song2[c % sizeof(song2)]]);
+		avrsound_set_hz(2, midi[song3[c % sizeof(song3)]-3]);
+		c++;
+		_delay_ms(85);
 	}
 	return 0;
 }

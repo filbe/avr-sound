@@ -13,75 +13,67 @@
 
 #include "avr-sound.h"
 
-volatile static uint8_t avrsound_buffer[AVRSOUND_BUFFERSIZE];
-volatile static uint16_t avrsound_buffer_cursor = 0;
-volatile static uint16_t avrsound_pcm_length = AVRSOUND_BUFFERSIZE << AVRSOUND_PCM_SPEED_SCALE;
-volatile static uint16_t avrsound_pcm_length_256 = 0;
-volatile static uint16_t avrsound_pcm_speed = (1 << AVRSOUND_PCM_SPEED_SCALE);
-volatile static uint16_t avrsound_write_cursor = 0;
+#define MAX_CHANNELS 3
 
-void avrsound_init()
-{
-	avrsound_pcm_length_256 = avrsound_pcm_length << AVRSOUND_PCM_SPEED_SCALE;
-	AVRSOUND_DDR |= 0xff; // enable output
+volatile uint16_t avrsound_buffercursor[MAX_CHANNELS];
+volatile float avrsound_buffer_jump = 1 >> 8;
+volatile uint16_t avrsound_buffer_speed[MAX_CHANNELS];
+volatile float avrsound_buffer_hz = 440.0;
+volatile uint16_t avrsound_buffer_len = 256;
+volatile uint8_t avrsound_buffer[AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
+
+void avrsound_init() {
+
 	if (AVRSOUND_ENDIANESS == AVRSOUND_BIG_ENDIAN) {
-		AVRSOUND_DDR |= AVRSOUND_PINMASK_BE;
-	} else if (AVRSOUND_ENDIANESS == AVRSOUND_LITTLE_ENDIAN) {
-		AVRSOUND_DDR |= AVRSOUND_PINMASK_LE;
+		AVRSOUND_DDR = AVRSOUND_PINMASK_BE;
+	} else {
+		AVRSOUND_DDR = AVRSOUND_PINMASK_LE;
 	}
-	TCCR0A |= (1 << WGM01); // CTC-mode
-	OCR0A = F_CPU / (AVRSOUND_BITRATE) / 8 - 1;
-	TIMSK0 |= (1 << OCIE0A);
-	TCCR0B |= (1 << CS01);
+
+	TCCR1B |= (1 << WGM13) | (1 << WGM12);
+	ICR1 = F_CPU / AVRSOUND_BITRATE / AVRSOUND_PCM_SPEED_SCALE - 1;
+	TIMSK1 |= (1 << OCIE1A);
+	TCCR1B |= (1 << CS11);
 }
 
-void avrsound_set_pcm_length(uint16_t length)
-{
-	avrsound_pcm_length = length;
-	avrsound_pcm_length_256 = avrsound_pcm_length << AVRSOUND_PCM_SPEED_SCALE;
+void avrsound_sample_init(uint16_t sample_len, float hz) {
+	// Forcing maximum sample length if trying bigger
+	if (sample_len > AVRSOUND_MAXIMUM_SAMPLE_LENGTH) {
+		sample_len = AVRSOUND_MAXIMUM_SAMPLE_LENGTH;
+	}
+	avrsound_buffer_len = sample_len;
+
+	//avrsound_buffer_jump = hz*1080.17/sample_len;
+	avrsound_buffer_hz = hz;
 }
 
-void avrsound_buffer_write_byte_at(uint8_t pcm_sample, uint16_t offset)
-{
-	avrsound_buffer[offset] = pcm_sample;
+void avrsound_setbuffer(uint16_t index, uint8_t value) {
+	avrsound_buffer[index] = value;
 }
 
-void avrsound_buffer_write_ring(uint8_t pcm_sample)
-{
-	avrsound_buffer[avrsound_write_cursor] = pcm_sample;
-	avrsound_write_cursor++;
-	if (avrsound_write_cursor > avrsound_pcm_length)
-		avrsound_write_cursor -= avrsound_pcm_length;
+void avrsound_set_hz(uint8_t channel, float hz) {
+	avrsound_buffer_speed[channel] = 256.0 * 256.0 * avrsound_buffer_len * hz / (AVRSOUND_BITRATE * avrsound_buffer_hz);
 }
 
-void avrsound_buffer_set_ring_position(uint16_t position)
+
+ISR (TIMER1_COMPA_vect) 
 {
-	avrsound_write_cursor = position;
-}
-
-void avrsound_buffer_write(uint8_t * pcm_in, uint16_t length, uint16_t offset)
-{
-	memcpy(&avrsound_buffer+offset, pcm_in, length);
-}
-
-void avrsound_buffer_write_sync(uint8_t * pcm_in, uint16_t length, uint16_t offset)
-{
-	cli();
-	memcpy(&avrsound_buffer+offset, pcm_in, length);
-	sei();
-}
-
-void avrsound_buffer_clean()
-{
-	memset(&avrsound_buffer, 0, sizeof(avrsound_buffer));
-}
-
-ISR (TIMER0_COMPA_vect) 
-{
-	AVRSOUND_PORT = avrsound_buffer[avrsound_buffer_cursor >> AVRSOUND_PCM_SPEED_SCALE];
-	avrsound_buffer_cursor += avrsound_pcm_speed;
-	if (avrsound_buffer_cursor > avrsound_pcm_length_256)
-		avrsound_buffer_cursor -= avrsound_pcm_length_256;
-
-
+	uint16_t bufsum = 0;
+	for (uint8_t i=0;i<MAX_CHANNELS;i++) {
+		switch(i) {
+			case 0:
+			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
+			break;
+			case 1:
+			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 2;
+			break;
+			case 2:
+			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 3;
+			break;	
+		}
+		
+		avrsound_buffercursor[i] += avrsound_buffer_speed[i];
+	}
+	AVRSOUND_PORT = bufsum;
+	
 }
