@@ -20,14 +20,14 @@ volatile float avrsound_buffer_jump = 1 >> 8;
 volatile uint16_t avrsound_buffer_speed[MAX_CHANNELS];
 volatile float avrsound_buffer_hz = 440.0;
 volatile uint16_t avrsound_buffer_len = 256;
-volatile uint8_t avrsound_buffer[AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
+volatile int16_t avrsound_buffer[AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
 
 void avrsound_init() {
 
 	if (AVRSOUND_ENDIANESS == AVRSOUND_BIG_ENDIAN) {
-		AVRSOUND_DDR = AVRSOUND_PINMASK_BE;
+		AVRSOUND_DDR |= AVRSOUND_PINMASK_BE;
 	} else {
-		AVRSOUND_DDR = AVRSOUND_PINMASK_LE;
+		AVRSOUND_DDR |= AVRSOUND_PINMASK_LE;
 	}
 
 	TCCR1B |= (1 << WGM13) | (1 << WGM12);
@@ -58,22 +58,26 @@ void avrsound_set_hz(uint8_t channel, float hz) {
 
 ISR (TIMER1_COMPA_vect) 
 {
-	uint16_t bufsum = 0;
+	int16_t bufsum = 0;
 	for (uint8_t i=0;i<MAX_CHANNELS;i++) {
 		switch(i) {
 			case 0:
-			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
+			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)];
 			break;
 			case 1:
-			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 2;
+			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)];
 			break;
 			case 2:
-			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 3;
+			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
 			break;	
 		}
-		
 		avrsound_buffercursor[i] += avrsound_buffer_speed[i];
 	}
-	AVRSOUND_PORT = bufsum;
+	bufsum = (bufsum / 2)-127;
+	if (bufsum > 127)
+		bufsum=127;
+	if (bufsum < -128)
+		bufsum=0;
+	AVRSOUND_PORT = bufsum-128;
 	
 }

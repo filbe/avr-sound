@@ -28,18 +28,17 @@ uint8_t song2[] = {
 	79, 78, 79, 78, 79, 80, 79, 77,
 };
 
-
 uint8_t song3[] = {
-	87, 94, 99, 94, 87, 94, 99, 94,
-	82, 89, 94, 89, 82, 89, 94, 89,
-	87, 94, 99, 94, 87, 94, 99, 94,
-	82, 89, 94, 89, 82, 89, 94, 89,
+	84, 91, 96, 91, 84, 91, 96, 91,
+	79, 86, 91, 86, 79, 86, 91, 86,
+	84, 91, 96, 91, 84, 91, 96, 91,
+	79, 86, 91, 86, 79, 86, 91, 86,
 };
 
 float midi[100];
 int main() 
 {
-	for (float i=0;i<132;i+=1.0) {
+	for (float i=0;i<100;i+=1.0) {
 		midi[(uint8_t)(i)] = pow(2.0, (i-69.0)*0.083333)*440.0;
 	}
 	sei();
@@ -48,19 +47,22 @@ int main()
 	avrsound_sample_init(256, 440.0);
 
 	for (uint16_t b=0;b<256;b++) {
-		avrsound_setbuffer(b, (uint8_t)(sin(b/256.0*M_PI)*127.5+127.5));
+		avrsound_setbuffer(b, sin(b/256.0*M_PI)*128.0);
 	}
 
 	uint8_t c = 0;
 
-
-
+	float transpose = 1.0;
+	uint8_t even=0;
 	while(1) {
-		avrsound_set_hz(0, midi[song[c % sizeof(song)]]);
-		avrsound_set_hz(1, midi[song2[c % sizeof(song2)]]);
-		avrsound_set_hz(2, midi[song3[c % sizeof(song3)]-3]);
+		avrsound_set_hz(0, (transpose)*midi[song[c % sizeof(song)]]);
+		avrsound_set_hz(1, (transpose)*midi[song2[c % sizeof(song2)]]);
+		avrsound_set_hz(2, (transpose)*midi[song3[c % sizeof(song3)]]);
 		c++;
-		_delay_ms(85);
+		transpose*=1.0012;
+		_delay_ms(80);
+
+		even = (even + 1) % 4;
 	}
 	return 0;
 }
