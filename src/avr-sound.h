@@ -29,7 +29,7 @@
 /*
 
 */
-#define AVRSOUND_BITRATE			8000
+#define AVRSOUND_BITRATE			20000
 #define AVRSOUND_PCM_SPEED_SCALE 	8
 #define AVRSOUND_MAXIMUM_SAMPLE_LENGTH 512
 
@@ -41,5 +41,6 @@ void avrsound_init();
 void avrsound_sample_init(uint16_t sample_len, float hz);
 void avrsound_setbuffer(uint16_t index, uint8_t value);
 void avrsound_set_hz(uint8_t channel, float hz);
+void avrsound_finetune(uint16_t tune);
 
 #endif

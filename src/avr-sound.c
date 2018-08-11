@@ -11,7 +11,7 @@
  *  Ville-Pekka Lahti <ville-pekka.lahti@hotmail.com>
  */
 
-#include "avr-sound.h"
+#include <avr-sound.h>
 
 #define MAX_CHANNELS 3
 
@@ -21,6 +21,7 @@ volatile uint16_t avrsound_buffer_speed[MAX_CHANNELS];
 volatile float avrsound_buffer_hz = 440.0;
 volatile uint16_t avrsound_buffer_len = 256;
 volatile int16_t avrsound_buffer[AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
+volatile float finetune = 1;
 
 void avrsound_init() {
 
@@ -34,6 +35,7 @@ void avrsound_init() {
 	ICR1 = F_CPU / AVRSOUND_BITRATE / AVRSOUND_PCM_SPEED_SCALE - 1;
 	TIMSK1 |= (1 << OCIE1A);
 	TCCR1B |= (1 << CS11);
+	sei();
 }
 
 void avrsound_sample_init(uint16_t sample_len, float hz) {
@@ -44,7 +46,7 @@ void avrsound_sample_init(uint16_t sample_len, float hz) {
 	avrsound_buffer_len = sample_len;
 
 	//avrsound_buffer_jump = hz*1080.17/sample_len;
-	avrsound_buffer_hz = hz;
+	avrsound_buffer_hz = sample_len;
 }
 
 void avrsound_setbuffer(uint16_t index, uint8_t value) {
@@ -52,9 +54,12 @@ void avrsound_setbuffer(uint16_t index, uint8_t value) {
 }
 
 void avrsound_set_hz(uint8_t channel, float hz) {
-	avrsound_buffer_speed[channel] = 256.0 * 256.0 * avrsound_buffer_len * hz / (AVRSOUND_BITRATE * avrsound_buffer_hz);
+	avrsound_buffer_speed[channel] = finetune*256.0 * 256.0 * avrsound_buffer_len * hz / (AVRSOUND_BITRATE * avrsound_buffer_hz);
 }
 
+void avrsound_finetune(uint16_t tune) {
+	finetune = pow(2,((tune-127.5) / 127.5));
+}
 
 ISR (TIMER1_COMPA_vect) 
 {
@@ -71,13 +76,13 @@ ISR (TIMER1_COMPA_vect)
 			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
 			break;	
 		}
-		avrsound_buffercursor[i] += avrsound_buffer_speed[i];
+		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
 	}
-	bufsum = (bufsum / 2)-127;
+	bufsum = (bufsum / 3)-127;
 	if (bufsum > 127)
 		bufsum=127;
 	if (bufsum < -128)
-		bufsum=0;
-	AVRSOUND_PORT = bufsum-128;
+		bufsum=-128;
+	AVRSOUND_PORT = bufsum+128;
 	
 }
