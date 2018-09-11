@@ -12,6 +12,8 @@
  */
 
 #include <avr-sound.h>
+#include <avr/pgmspace.h>
+#include "compress_table.h"
 
 volatile uint16_t avrsound_buffercursor[AVRSOUND_MAX_CHANNELS];
 volatile float avrsound_buffer_jump = 1 >> 8;
@@ -21,6 +23,9 @@ volatile uint16_t avrsound_buffer_len = 256;
 volatile int16_t avrsound_buffer[AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
 volatile float finetune = 1;
 volatile uint16_t _avrsound_samplerate;
+volatile uint16_t avrsound_buffer_volume[AVRSOUND_MAX_CHANNELS];
+volatile uint8_t avrsound_buffer_volume_additive[AVRSOUND_MAX_CHANNELS];
+volatile uint8_t avrsound_using_volume = 0;
 
 void avrsound_init()
 {
@@ -36,6 +41,10 @@ void avrsound_init()
 	TIMSK1 |= (1 << OCIE1A);
 	TCCR1B |= (1 << CS11);
 	sei();
+
+	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
+		avrsound_buffer_volume[i] = 255;
+	}
 }
 
 void avrsound_sample_init(uint16_t sample_len, float hz)
@@ -53,6 +62,17 @@ void avrsound_sample_init(uint16_t sample_len, float hz)
 void avrsound_setbuffer(uint16_t index, uint8_t value)
 {
 	avrsound_buffer[index] = value;
+}
+
+void avrsound_set_volume(uint8_t channel, uint8_t volume) 
+{
+	avrsound_buffer_volume[channel] = volume;
+	avrsound_buffer_volume_additive[channel] = (128 - (128 * volume / 255));
+	if (volume == 0) {
+		avrsound_using_volume = 0;
+	} else {
+		avrsound_using_volume = 1;
+	}
 }
 
 void avrsound_set_hz(uint8_t channel, float hz)
@@ -82,25 +102,35 @@ void avrsound_set_samplerate(uint16_t samplerate)
 	sei();
 }
 
+uint8_t avrsound_compress(uint16_t sample, uint8_t channels) {
+	// compressing and normalizing the result
+	return pgm_read_byte(&compress_table[sample+((3-channels) << 7)]);
+}
+
 ISR (TIMER1_COMPA_vect)
 {
 	int16_t bufsum = 0;
+	uint8_t active_channels = 0;
 	for (uint8_t i = 0; i < AVRSOUND_MAX_CHANNELS; i++) {
 		if (avrsound_buffer_speed[i] > 0) {
-			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)];
+			if (avrsound_using_volume == 1) {
+				bufsum += (avrsound_buffer[(avrsound_buffercursor[i] >> 8)] * avrsound_buffer_volume[i] / 256) + avrsound_buffer_volume_additive[i];
+			} else {
+				bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)];
+			}
+			
 			avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
+			active_channels++;
 		}
 	}
 
-	if (bufsum > 0) {
+	if (bufsum != 0) {
 		AVRSOUND_PORT_LED |= (1 << AVRSOUND_PIN_LED);
 
-		bufsum = (bufsum / AVRSOUND_MAX_CHANNELS) - 127;
-		if (bufsum > 127)
-			bufsum = 127;
-		if (bufsum < -128)
-			bufsum = -128;
-		AVRSOUND_PORT = bufsum + 128;
+		bufsum = avrsound_compress(bufsum, active_channels);
+
+		AVRSOUND_PORT = bufsum;
+
 	} else {
 		AVRSOUND_PORT_LED &= ~(1 << AVRSOUND_PIN_LED);
 		AVRSOUND_PORT = 128;

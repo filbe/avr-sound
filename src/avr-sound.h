@@ -45,6 +45,7 @@
 void avrsound_init();
 void avrsound_sample_init(uint16_t sample_len, float hz);
 void avrsound_setbuffer(uint16_t index, uint8_t value);
+void avrsound_set_volume(uint8_t channel, uint8_t volume);
 void avrsound_set_hz(uint8_t channel, float hz);
 void avrsound_finetune(uint16_t tune);
 void avrsound_set_samplerate(uint16_t samplerate);
