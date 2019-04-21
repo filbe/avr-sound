@@ -13,7 +13,7 @@
 
 #include <avr-sound.h>
 #include <avr/pgmspace.h>
-#include "compress_table.h"
+//#include "compress_table.h"
 
 volatile uint16_t avrsound_buffercursor[AVRSOUND_MAX_CHANNELS];
 volatile float avrsound_buffer_jump = 1 >> 8;
@@ -75,6 +75,10 @@ void avrsound_set_volume(uint8_t channel, uint8_t volume)
 	}
 }
 
+void avrsound_get_volume(uint8_t channel) {
+	return avrsound_buffer_volume[channel];
+}
+
 void avrsound_set_hz(uint8_t channel, float hz)
 {
 	if (hz < 8.5) {
@@ -104,7 +108,7 @@ void avrsound_set_samplerate(uint16_t samplerate)
 
 uint8_t avrsound_compress(uint16_t sample, uint8_t channels) {
 	// compressing and normalizing the result
-	return pgm_read_byte(&compress_table[sample+((3-channels) << 7)]);
+	return sample << channels;//pgm_read_byte(&compress_table[sample+((3-channels) << 7)]);
 }
 
 ISR (TIMER1_COMPA_vect)
