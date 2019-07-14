@@ -30,7 +30,7 @@
 #define AVRSOUND_PORT_LED			PORTB
 #define AVRSOUND_PIN_LED			0
 
-#define AVRSOUND_MAX_CHANNELS 3
+#define AVRSOUND_MAX_CHANNELS 2
 /*
 
 */
@@ -46,8 +46,10 @@ void avrsound_init();
 void avrsound_sample_init(uint16_t sample_len, float hz);
 void avrsound_setbuffer(uint16_t index, uint8_t value);
 void avrsound_set_volume(uint8_t channel, uint8_t volume);
+uint8_t avrsound_get_volume(uint8_t channel);
 void avrsound_set_hz(uint8_t channel, float hz);
 void avrsound_finetune(uint16_t tune);
 void avrsound_set_samplerate(uint16_t samplerate);
+void adc_init(void);
 
 #endif

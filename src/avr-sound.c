@@ -40,9 +40,16 @@ void avrsound_init()
 	ICR1 = F_CPU / AVRSOUND_BITRATE / AVRSOUND_PCM_SPEED_SCALE - 1;
 	TIMSK1 |= (1 << OCIE1A);
 	TCCR1B |= (1 << CS11);
+
+	OCR2A |= 190; // about 100 times per sec
+	TCCR2A |= WGM21;
+	TCCR2B |= CS22 | CS21 | CS20;
+	TIMSK2 |= (1 << OCIE2A);
+
+
 	sei();
 
-	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
+	for (uint8_t i = 0; i < AVRSOUND_MAX_CHANNELS; i++) {
 		avrsound_buffer_volume[i] = 255;
 	}
 }
@@ -64,7 +71,7 @@ void avrsound_setbuffer(uint16_t index, uint8_t value)
 	avrsound_buffer[index] = value;
 }
 
-void avrsound_set_volume(uint8_t channel, uint8_t volume) 
+void avrsound_set_volume(uint8_t channel, uint8_t volume)
 {
 	avrsound_buffer_volume[channel] = volume;
 	avrsound_buffer_volume_additive[channel] = (128 - (128 * volume / 255));
@@ -75,7 +82,7 @@ void avrsound_set_volume(uint8_t channel, uint8_t volume)
 	}
 }
 
-void avrsound_get_volume(uint8_t channel) {
+uint8_t avrsound_get_volume(uint8_t channel) {
 	return avrsound_buffer_volume[channel];
 }
 
@@ -108,8 +115,35 @@ void avrsound_set_samplerate(uint16_t samplerate)
 
 uint8_t avrsound_compress(uint16_t sample, uint8_t channels) {
 	// compressing and normalizing the result
-	return sample << channels;//pgm_read_byte(&compress_table[sample+((3-channels) << 7)]);
+	return sample;// << channels;//pgm_read_byte(&compress_table[sample+((3-channels) << 7)]);
 }
+
+
+
+
+
+
+uint16_t abcx16(uint16_t a, uint16_t b, uint16_t c, uint16_t x) {
+	if (a == 65535) 
+		return 65535;
+	if (x < a) 
+		return c+(uint32_t)b*(uint32_t)x/a;
+	return (((x-a-c)*(65536-b+c)) / (65536-a)) + b;
+}
+
+
+
+
+
+
+uint16_t fuzzyX = 32767;
+uint16_t fuzzyY = 32767;
+uint16_t fuzzyZ = 0;
+uint16_t fuzzyAngle = 0;
+
+
+
+
 
 ISR (TIMER1_COMPA_vect)
 {
@@ -118,11 +152,11 @@ ISR (TIMER1_COMPA_vect)
 	for (uint8_t i = 0; i < AVRSOUND_MAX_CHANNELS; i++) {
 		if (avrsound_buffer_speed[i] > 0) {
 			if (avrsound_using_volume == 1) {
-				bufsum += (avrsound_buffer[(avrsound_buffercursor[i] >> 8)] * avrsound_buffer_volume[i] / 256) + avrsound_buffer_volume_additive[i];
+				bufsum += (avrsound_buffer[abcx16(fuzzyX, fuzzyY, fuzzyZ, avrsound_buffercursor[i]) >> 8] * avrsound_buffer_volume[i] >> 8) + avrsound_buffer_volume_additive[i];
 			} else {
-				bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)];
+				bufsum += avrsound_buffer[abcx16(fuzzyX, fuzzyY, fuzzyZ, avrsound_buffercursor[i]) >> 8];
 			}
-			
+
 			avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
 			active_channels++;
 		}
@@ -141,4 +175,41 @@ ISR (TIMER1_COMPA_vect)
 	}
 
 
+}
+
+uint16_t adc_read(uint8_t adcx);
+
+uint16_t adcprescale = 0;
+int16_t fuzzydeltaY = 0, fuzzydeltaX = 0;
+
+ISR (TIMER2_COMPA_vect) {
+	if (adcprescale % 64 == 0) {
+		fuzzydeltaY = (adc_read(1)/4-64) << 1;
+		fuzzydeltaX = (adc_read(2)/4-64) << 1;
+		fuzzyZ = adc_read(3) << 6;
+	}
+	fuzzyY += fuzzydeltaY;
+	fuzzyX += fuzzydeltaX;
+	adcprescale++;
+}
+
+void adc_init()
+{
+	DDRC &= ~(0x7);
+	ADCSRA |= (1 << ADEN);
+	ADCSRA |= (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+	ADMUX = 0;
+	ADMUX  |= (1 << REFS0);
+	DIDR0 = 0b00011111;
+}
+
+uint16_t adc_read(uint8_t ch)
+{
+	ADMUX = (ch);
+
+	ADCSRA |= (1 << ADSC);
+
+	while (ADCSRA & (1 << ADSC)); {}
+
+	return ADCW;
 }
