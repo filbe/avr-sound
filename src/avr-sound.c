@@ -19,7 +19,7 @@ volatile uint16_t avrsound_buffercursor[MAX_CHANNELS];
 volatile float avrsound_buffer_jump = 1 >> 8;
 volatile uint16_t avrsound_buffer_speed[MAX_CHANNELS];
 volatile float avrsound_buffer_hz = 440.0;
-volatile uint16_t avrsound_buffer_len = 256;
+volatile uint16_t avrsound_buffer_len = 512;
 volatile int16_t avrsound_buffer[AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
 volatile float finetune = 1;
 
@@ -63,26 +63,22 @@ void avrsound_finetune(uint16_t tune) {
 
 ISR (TIMER1_COMPA_vect) 
 {
-	int16_t bufsum = 0;
+	int16_t _bufsum = 0;
 	for (uint8_t i=0;i<MAX_CHANNELS;i++) {
 		switch(i) {
 			case 0:
-			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)];
+			_bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)];
 			break;
 			case 1:
-			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)];
+			_bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
 			break;
 			case 2:
-			bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
+			_bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
 			break;	
 		}
 		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
 	}
-	bufsum = (bufsum / 3)-127;
-	if (bufsum > 127)
-		bufsum=127;
-	if (bufsum < -128)
-		bufsum=-128;
-	AVRSOUND_PORT = bufsum+128;
+
+	AVRSOUND_PORT = _bufsum >> 2;
 	
 }
