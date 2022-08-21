@@ -76,7 +76,7 @@ int main()
 		
 		avrsound_set_hz(0, midi[song[c % sizeof(song)]]);
 		avrsound_set_hz(1, midi[song2[c % sizeof(song2)]]);
-		avrsound_set_hz(2, midi[song3[c % sizeof(song3)]]);
+		avrsound_set_hz(2, midi[12+song3[c % sizeof(song3)]]);
 		c++;
 		_delay_ms(55);
 		
