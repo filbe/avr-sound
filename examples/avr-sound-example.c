@@ -50,12 +50,12 @@ uint8_t song3[] = {
 	79,81,83,86,79,81,83,86,
 };
 
-float midi[100];
+float midi[110];
 
 uint16_t samlen = 256;
 int main() 
 {
-	for (float i=0;i<100;i+=1.0) {
+	for (float i=0;i<110;i+=1.0) {
 		midi[(uint8_t)(i)] = pow(2.0, (i-69.0)*0.083333)*440.0;
 	}
 
@@ -65,8 +65,17 @@ int main()
 
 	for (uint16_t b=0;b<samlen;b++) {
 		// Buffer range is -128....127
-		//avrsound_setbuffer(b, sin(b/256.0*M_PI)*128.0); // SINE WAVE
-		avrsound_setbuffer(b, b-128); // SAWTOOTH
+		
+		avrsound_setbuffer(b, 
+		sin(b/2/254.0*M_PI)*16.0 + 
+		sin(b/254.0*M_PI)*16.0 + 
+		sin(2*b/254.0*M_PI)*16.0 + 
+		sin(4*b/254.0*M_PI)*16.0 + 
+		sin(8*b/254.0*M_PI)*16.0 + 
+		sin(16*b/254.0*M_PI)*16.0 + 32
+		); // SINE WAVE
+		
+		//avrsound_setbuffer(b, b-128); // SAWTOOTH
 		//avrsound_setbuffer(b, b/128*128); // SQUARE WAVE
 	}
 
@@ -74,11 +83,24 @@ int main()
 	avrsound_set_hz(0, 500.0);
 	while(1) {
 		
+
+
+		
 		avrsound_set_hz(0, midi[song[c % sizeof(song)]]);
 		avrsound_set_hz(1, midi[song2[c % sizeof(song2)]]);
 		avrsound_set_hz(2, midi[12+song3[c % sizeof(song3)]]);
+		
+
+
 		c++;
-		_delay_ms(55);
+		_delay_ms(37);
+
+		//avrsound_set_hz(0, 0);
+		//avrsound_set_hz(1, 0);
+		avrsound_set_hz(2, 0);
+
+		_delay_ms(17);
+		
 		
 
 	}

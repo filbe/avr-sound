@@ -67,7 +67,7 @@ ISR (TIMER1_COMPA_vect)
 	for (uint8_t i=0;i<MAX_CHANNELS;i++) {
 		switch(i) {
 			case 0:
-			_bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)];
+			_bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] ;
 			break;
 			case 1:
 			_bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
@@ -79,6 +79,6 @@ ISR (TIMER1_COMPA_vect)
 		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
 	}
 
-	AVRSOUND_PORT = _bufsum >> 2;
+	AVRSOUND_PORT = (uint16_t)((_bufsum + 256)) >> 1 ;//(_bufsum >> 2) + 128;
 	
 }
