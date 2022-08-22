@@ -31,7 +31,8 @@
 */
 #define AVRSOUND_BITRATE			30000
 #define AVRSOUND_PCM_SPEED_SCALE 	8
-#define AVRSOUND_MAXIMUM_SAMPLE_LENGTH 512
+#define AVRSOUND_MAXIMUM_SAMPLE_LENGTH 128
+#define AVRSOUND_MAX_CHANNELS       3
 
 #ifndef F_CPU
 #error "F_CPU is missing!"
@@ -39,8 +40,13 @@
 
 void avrsound_init();
 void avrsound_sample_init(uint16_t sample_len, float hz);
-void avrsound_setbuffer(uint16_t index, uint8_t value);
+void avrsound_setbuffer(uint8_t waveform, uint16_t index, int8_t value);
 void avrsound_set_hz(uint8_t channel, float hz);
+void avrsound_set_waveform(uint8_t channel, uint8_t waveform);
 void avrsound_finetune(uint16_t tune);
+
+
+volatile uint32_t time;
+volatile uint8_t current_waveform[AVRSOUND_MAX_CHANNELS];
 
 #endif

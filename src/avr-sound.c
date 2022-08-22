@@ -13,17 +13,22 @@
 
 #include <avr-sound.h>
 
-#define MAX_CHANNELS 3
-
-volatile uint16_t avrsound_buffercursor[MAX_CHANNELS];
+volatile uint16_t avrsound_buffercursor[AVRSOUND_MAX_CHANNELS];
 volatile float avrsound_buffer_jump = 1 >> 8;
-volatile uint16_t avrsound_buffer_speed[MAX_CHANNELS];
+volatile uint16_t avrsound_buffer_speed[AVRSOUND_MAX_CHANNELS];
 volatile float avrsound_buffer_hz = 440.0;
-volatile uint16_t avrsound_buffer_len = 512;
-volatile int16_t avrsound_buffer[AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
+volatile uint16_t avrsound_buffer_len = AVRSOUND_MAXIMUM_SAMPLE_LENGTH;
+volatile int8_t avrsound_buffer[AVRSOUND_MAX_CHANNELS][AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
 volatile float finetune = 1;
 
+volatile uint32_t time = 0;
+volatile uint8_t current_waveform[AVRSOUND_MAX_CHANNELS];
+
 void avrsound_init() {
+
+	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
+		avrsound_set_waveform(i,0);
+	}
 
 	if (AVRSOUND_ENDIANESS == AVRSOUND_BIG_ENDIAN) {
 		AVRSOUND_DDR |= AVRSOUND_PINMASK_BE;
@@ -49,12 +54,19 @@ void avrsound_sample_init(uint16_t sample_len, float hz) {
 	avrsound_buffer_hz = sample_len;
 }
 
-void avrsound_setbuffer(uint16_t index, uint8_t value) {
-	avrsound_buffer[index] = value;
+void avrsound_setbuffer(uint8_t waveform, uint16_t index, int8_t value) {
+	avrsound_buffer[waveform][index] = value;
 }
 
 void avrsound_set_hz(uint8_t channel, float hz) {
-	avrsound_buffer_speed[channel] = finetune*256.0 * 256.0 * avrsound_buffer_len * hz / (AVRSOUND_BITRATE * avrsound_buffer_hz);
+	if (hz < 20) 
+		avrsound_buffer_speed[channel] = 0;
+	else
+		avrsound_buffer_speed[channel] = finetune*256.0 * 256.0 * avrsound_buffer_len * hz / (AVRSOUND_BITRATE * avrsound_buffer_hz);
+}
+
+void avrsound_set_waveform(uint8_t channel, uint8_t waveform) {
+	current_waveform[channel] = waveform;
 }
 
 void avrsound_finetune(uint16_t tune) {
@@ -64,21 +76,22 @@ void avrsound_finetune(uint16_t tune) {
 ISR (TIMER1_COMPA_vect) 
 {
 	int16_t _bufsum = 0;
-	for (uint8_t i=0;i<MAX_CHANNELS;i++) {
+	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
+		if (avrsound_buffer_speed[i] < 10) continue;
 		switch(i) {
 			case 0:
-			_bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] ;
+			_bufsum += avrsound_buffer[current_waveform[i]][(avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH] + 128;
 			break;
 			case 1:
-			_bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
+			_bufsum += (avrsound_buffer[current_waveform[i]][(avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH] + 128) >> 1;
 			break;
 			case 2:
-			_bufsum += avrsound_buffer[(avrsound_buffercursor[i] >> 8)] >> 1;
+			_bufsum += (avrsound_buffer[current_waveform[i]][(avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH] + 128) >> 1;
 			break;	
 		}
 		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
 	}
 
-	AVRSOUND_PORT = (uint16_t)((_bufsum + 256)) >> 1 ;//(_bufsum >> 2) + 128;
-	
+	AVRSOUND_PORT = (uint8_t)(_bufsum >> 1);
+	time++;
 }
