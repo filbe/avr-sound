@@ -24,7 +24,7 @@ make fuses && make flash
 
 Feel free to comment and contribute if you have better ideas or solutions to the same problem.
 
-[Listen to recorded example audio](https://github.com/filbe/avr-sound/blob/main/examples/example1.mp3)
+[Listen to recorded example audio](https://github.com/filbe/avr-sound/blob/main/examples/example1.mp3?raw=true)
 
 ![Example 1 pic 1](https://github.com/filbe/avr-sound/blob/main/examples/example1_1.jpg?raw=true)
 ![Example 1 pic 2](https://github.com/filbe/avr-sound/blob/main/examples/example1_2.jpg?raw=true)
