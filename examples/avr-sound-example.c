@@ -61,12 +61,12 @@ uint16_t samlen = AVRSOUND_MAXIMUM_SAMPLE_LENGTH;
 int main() 
 {
 	for (float i=0;i<110;i+=1.0) {
-		midi[(uint8_t)(i)] = pow(2.0, (i-69.0)*0.083333)*440.0;
+		midi[(uint8_t)(i)] = pow(2.0, (i-12.0-69.0)*0.083333)*440.0;
 	}
 
 	avrsound_init();
 	
-	avrsound_sample_init(samlen, 440.0);
+	avrsound_sample_init(samlen, 880.0);
 
 	for (int16_t b=0;b<samlen;b++) {
 		// Buffer range is -128....127
@@ -99,6 +99,10 @@ int main()
 	avrsound_set_hz(2,0);
 
 	avrsound_set_waveform(0,0);
+	avrsound_set_waveform(1,1);
+	avrsound_set_waveform(2,2);
+
+	avrsound_set_waveform(0,1);
 	avrsound_set_waveform(1,1);
 	avrsound_set_waveform(2,2);
 
