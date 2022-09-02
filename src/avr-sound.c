@@ -16,6 +16,12 @@
 volatile uint16_t avrsound_buffercursor[AVRSOUND_MAX_CHANNELS];
 volatile float avrsound_buffer_jump = 1 >> 8;
 volatile uint16_t avrsound_buffer_speed[AVRSOUND_MAX_CHANNELS];
+
+volatile uint8_t avrsound_buffer_volume[AVRSOUND_MAX_CHANNELS];
+volatile uint8_t _avrsound_buffer_volume[AVRSOUND_MAX_CHANNELS];
+
+volatile uint16_t avrsound_buffer_volume_sum = 0;
+
 volatile float avrsound_buffer_hz = 440.0;
 volatile uint16_t avrsound_buffer_len = AVRSOUND_MAXIMUM_SAMPLE_LENGTH;
 volatile int8_t avrsound_buffer[AVRSOUND_MAX_CHANNELS][AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
@@ -28,6 +34,7 @@ void avrsound_init() {
 
 	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
 		avrsound_set_waveform(i,0);
+		avrsound_set_volume(i,255);
 	}
 
 	if (AVRSOUND_ENDIANESS == AVRSOUND_BIG_ENDIAN) {
@@ -41,6 +48,20 @@ void avrsound_init() {
 	TIMSK1 |= (1 << OCIE1A);
 	TCCR1B |= (1 << CS11);
 	sei();
+}
+
+void avrsound_set_volume(uint8_t channel, uint8_t volume) {
+	avrsound_buffer_volume[channel] = volume;
+
+	// count total to be able to scale volumes in mixing
+	avrsound_buffer_volume_sum = 0;
+	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
+		avrsound_buffer_volume_sum += avrsound_buffer_volume[i];
+	}
+	if (avrsound_buffer_volume_sum < 255) avrsound_buffer_volume_sum = 255;
+	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
+		_avrsound_buffer_volume[i] = 255 * avrsound_buffer_volume[i] / avrsound_buffer_volume_sum;
+	}
 }
 
 void avrsound_sample_init(uint16_t sample_len, float hz) {
@@ -78,20 +99,12 @@ ISR (TIMER1_COMPA_vect)
 	int16_t _bufsum = 0;
 	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
 		if (avrsound_buffer_speed[i] < 10) continue;
-		switch(i) {
-			case 0:
-			_bufsum += avrsound_buffer[current_waveform[i]][(avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH] + 128;
-			break;
-			case 1:
-			_bufsum += (avrsound_buffer[current_waveform[i]][(avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH] + 128) >> 1;
-			break;
-			case 2:
-			_bufsum += (avrsound_buffer[current_waveform[i]][(avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH] + 128) >> 1;
-			break;	
-		}
+		int8_t sample = avrsound_buffer[current_waveform[i]][(avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
+		uint8_t volume = _avrsound_buffer_volume[i];
+		_bufsum += (int16_t)((sample + 128) * volume);
 		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
 	}
 
-	AVRSOUND_PORT = (uint8_t)(_bufsum >> 1);
+	AVRSOUND_PORT = (uint8_t)(_bufsum >> 8);
 	time++;
 }

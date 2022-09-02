@@ -28,12 +28,12 @@ uint8_t song[] = {
 };
 uint8_t song2[] = {
 	50,0,0,50,0,50,50,0,
-	0,0,50,50,0,50,50,0,
+	0,0,62,64,65,69,74,77,
 	48,0,0,48,0,48,48,0,
-	0,0,48,48,0,48,48,0,
+	0,0,60,62,64,69,72,76,
 
 	46,0,0,46,0,46,46,0,
-	0,0,46,46,0,46,46,0,
+	0,0,58,60,62,65,70,74,
 	48,0,0,48,0,48,48,0,
 	60,0,57,0,55,0,48,0,
 };
@@ -84,7 +84,7 @@ int main()
 		avrsound_setbuffer(2, b, 
 		sin(b/(float)(samlen)*M_PI)*127
 		
-		); // organ
+		); // sin
 		
 		
 		avrsound_setbuffer(1, b, (b % samlen) - samlen / 2); // SAWTOOTH
@@ -98,17 +98,17 @@ int main()
 	avrsound_set_hz(1,0);
 	avrsound_set_hz(2,0);
 
-	avrsound_set_waveform(0,0);
-	avrsound_set_waveform(1,1);
-	avrsound_set_waveform(2,2);
-
 	avrsound_set_waveform(0,1);
 	avrsound_set_waveform(1,1);
 	avrsound_set_waveform(2,2);
 
+	avrsound_set_volume(0,255);
+	avrsound_set_volume(1,150);
+	avrsound_set_volume(2,70);
+
 	while(1) {
 		avrsound_set_hz(0, midi[song[c % sizeof(song)]]);
-		avrsound_set_hz(1, midi[song2[c % sizeof(song2)]]);
+		avrsound_set_hz(1, song2[c % sizeof(song2)] ? midi[-12+song2[c % sizeof(song2)]] : 0);
 		avrsound_set_hz(2, midi[song3[c % sizeof(song3)]]);
 		c++;
 
