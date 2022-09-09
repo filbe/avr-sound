@@ -29,10 +29,10 @@
 /*
 
 */
-#define AVRSOUND_BITRATE			30000
+#define AVRSOUND_BITRATE			25000
 #define AVRSOUND_PCM_SPEED_SCALE 	8
 #define AVRSOUND_MAXIMUM_SAMPLE_LENGTH 128
-#define AVRSOUND_MAX_CHANNELS       3
+#define AVRSOUND_MAX_CHANNELS       8
 
 #ifndef F_CPU
 #error "F_CPU is missing!"

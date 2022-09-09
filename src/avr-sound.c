@@ -69,9 +69,6 @@ void avrsound_sample_init(uint16_t sample_len, float hz) {
 	if (sample_len > AVRSOUND_MAXIMUM_SAMPLE_LENGTH) {
 		sample_len = AVRSOUND_MAXIMUM_SAMPLE_LENGTH;
 	}
-	avrsound_buffer_len = sample_len;
-
-	//avrsound_buffer_jump = hz*1080.17/sample_len;
 	avrsound_buffer_hz = sample_len;
 }
 
@@ -96,10 +93,16 @@ void avrsound_finetune(uint16_t tune) {
 
 ISR (TIMER1_COMPA_vect) 
 {
+	PORTB = 255;
 	int16_t _bufsum = 0;
 	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
-		if (avrsound_buffer_speed[i] < 10) continue;
-		int8_t sample = avrsound_buffer[current_waveform[i]][(avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
+		uint8_t bufspeed = avrsound_buffer_speed[i];
+		if (!bufspeed) continue;
+
+		int8_t waveform = current_waveform[i];
+		uint8_t sample_cursor = (avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH;
+
+		int8_t sample = avrsound_buffer[waveform][sample_cursor];
 		uint8_t volume = _avrsound_buffer_volume[i];
 		_bufsum += (int16_t)((sample + 128) * volume);
 		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
@@ -107,4 +110,5 @@ ISR (TIMER1_COMPA_vect)
 
 	AVRSOUND_PORT = (uint8_t)(_bufsum >> 8);
 	time++;
+	PORTB = 0;
 }

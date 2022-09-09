@@ -50,6 +50,26 @@ uint8_t song3[] = {
 	84,86,88,91,84,86,88,91,
 };
 
+uint8_t song4[] = {
+	86,98,
+};
+
+uint8_t song5[] = {
+	74,86,
+};
+
+uint8_t song6[] = {
+	62, 74,
+};
+
+uint8_t song7[] = {
+	50, 62,
+};
+
+uint8_t song8[] = {
+	38, 50,
+};
+
 float midi[110];
 
 void dummyDelay(uint32_t val) {
@@ -66,7 +86,7 @@ int main()
 
 	avrsound_init();
 	
-	avrsound_sample_init(samlen, 880.0);
+	avrsound_sample_init(samlen, 440.0);
 
 	for (int16_t b=0;b<samlen;b++) {
 		// Buffer range is -128....127
@@ -97,22 +117,44 @@ int main()
 	avrsound_set_hz(0,0);
 	avrsound_set_hz(1,0);
 	avrsound_set_hz(2,0);
+	avrsound_set_hz(3,0);
+	avrsound_set_hz(4,0);
+	avrsound_set_hz(5,0);
+	avrsound_set_hz(6,0);
+	avrsound_set_hz(7,0);
 
 	avrsound_set_waveform(0,1);
 	avrsound_set_waveform(1,1);
 	avrsound_set_waveform(2,2);
+	avrsound_set_waveform(3,0);
+	avrsound_set_waveform(4,0);
+	avrsound_set_waveform(5,0);
+	avrsound_set_waveform(6,0);
+	avrsound_set_waveform(7,0);
 
 	avrsound_set_volume(0,255);
 	avrsound_set_volume(1,150);
 	avrsound_set_volume(2,70);
+	avrsound_set_volume(3,50);
+	avrsound_set_volume(4,50);
+	avrsound_set_volume(5,50);
+	avrsound_set_volume(6,50);
+	avrsound_set_volume(7,150);
+
+	DDRB = 255;
 
 	while(1) {
 		avrsound_set_hz(0, midi[song[c % sizeof(song)]]);
 		avrsound_set_hz(1, song2[c % sizeof(song2)] ? midi[-12+song2[c % sizeof(song2)]] : 0);
 		avrsound_set_hz(2, midi[song3[c % sizeof(song3)]]);
+		avrsound_set_hz(3, midi[song4[c % sizeof(song4)]]);
+		avrsound_set_hz(4, midi[song5[c % sizeof(song5)]]);
+		avrsound_set_hz(5, midi[song6[c % sizeof(song6)]]);
+		avrsound_set_hz(6, midi[song7[c % sizeof(song7)]]);
+		avrsound_set_hz(7, midi[song8[c % sizeof(song8)]]);
 		c++;
 
-		dummyDelay(24);
+		dummyDelay(20);
 		
 
 	}
