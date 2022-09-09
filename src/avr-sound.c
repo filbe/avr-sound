@@ -13,12 +13,27 @@
 
 #include <avr-sound.h>
 
+#define ADSR_UNRELEASED 0
+#define ADSR_RELEASED   1
+#define ADSR_OFF        2
+
 volatile uint16_t avrsound_buffercursor[AVRSOUND_MAX_CHANNELS];
 volatile float avrsound_buffer_jump = 1 >> 8;
 volatile uint16_t avrsound_buffer_speed[AVRSOUND_MAX_CHANNELS];
 
 volatile uint8_t avrsound_buffer_volume[AVRSOUND_MAX_CHANNELS];
 volatile uint8_t _avrsound_buffer_volume[AVRSOUND_MAX_CHANNELS];
+volatile uint32_t avrsound_channel_start_time[AVRSOUND_MAX_CHANNELS];
+volatile uint32_t avrsound_channel_release_time[AVRSOUND_MAX_CHANNELS];
+volatile uint8_t avrsound_channel_adsr_state[AVRSOUND_MAX_CHANNELS];
+
+volatile uint16_t avrsound_channel_adsr_attack[AVRSOUND_MAX_CHANNELS];
+volatile uint16_t avrsound_channel_adsr_decay[AVRSOUND_MAX_CHANNELS];
+volatile uint8_t avrsound_channel_adsr_sustain[AVRSOUND_MAX_CHANNELS];
+volatile uint16_t avrsound_channel_adsr_release[AVRSOUND_MAX_CHANNELS];
+volatile uint32_t avrsound_channel_adsr_attack_flip[AVRSOUND_MAX_CHANNELS];
+volatile uint32_t avrsound_channel_adsr_decay_flip[AVRSOUND_MAX_CHANNELS];
+volatile uint32_t avrsound_channel_adsr_release_flip[AVRSOUND_MAX_CHANNELS];
 
 volatile uint16_t avrsound_buffer_volume_sum = 0;
 
@@ -27,7 +42,7 @@ volatile uint16_t avrsound_buffer_len = AVRSOUND_MAXIMUM_SAMPLE_LENGTH;
 volatile int8_t avrsound_buffer[AVRSOUND_MAX_CHANNELS][AVRSOUND_MAXIMUM_SAMPLE_LENGTH];
 volatile float finetune = 1;
 
-volatile uint32_t time = 0;
+volatile uint64_t time = 0;
 volatile uint8_t current_waveform[AVRSOUND_MAX_CHANNELS];
 
 void avrsound_init() {
@@ -35,6 +50,7 @@ void avrsound_init() {
 	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
 		avrsound_set_waveform(i,0);
 		avrsound_set_volume(i,255);
+		avrsound_channel_adsr_state[i] = ADSR_OFF;
 	}
 
 	if (AVRSOUND_ENDIANESS == AVRSOUND_BIG_ENDIAN) {
@@ -77,10 +93,23 @@ void avrsound_setbuffer(uint8_t waveform, uint16_t index, int8_t value) {
 }
 
 void avrsound_set_hz(uint8_t channel, float hz) {
-	if (hz < 20) 
-		avrsound_buffer_speed[channel] = 0;
-	else
-		avrsound_buffer_speed[channel] = finetune*256.0 * 256.0 * avrsound_buffer_len * hz / (AVRSOUND_BITRATE * avrsound_buffer_hz);
+	uint32_t newspeed = avrsound_buffer_speed[channel];
+	if (hz < 20) {
+		if (avrsound_channel_adsr_state[channel] == ADSR_UNRELEASED) {
+			avrsound_channel_adsr_state[channel] = ADSR_RELEASED;
+			avrsound_channel_release_time[channel] = time;
+		}
+		avrsound_channel_start_time[channel] = time;
+	}
+	else {
+		avrsound_channel_adsr_state[channel] = ADSR_UNRELEASED;
+		newspeed = finetune*256.0 * 256.0 * avrsound_buffer_len * hz / (AVRSOUND_BITRATE * avrsound_buffer_hz);
+		if (avrsound_buffer_speed[channel] != newspeed) {
+			avrsound_channel_start_time[channel] = time;
+		}
+		avrsound_buffer_speed[channel] = newspeed;
+	}
+
 }
 
 void avrsound_set_waveform(uint8_t channel, uint8_t waveform) {
@@ -91,24 +120,85 @@ void avrsound_finetune(uint16_t tune) {
 	finetune = pow(2,((tune-127.5) / 127.5));
 }
 
+void avrsound_set_adsr(uint8_t channel, uint16_t attack, uint16_t decay, uint8_t sustain, uint16_t release) {
+	avrsound_channel_adsr_attack[channel] = attack;
+	avrsound_channel_adsr_decay[channel] = decay;
+	avrsound_channel_adsr_sustain[channel] = sustain;
+	avrsound_channel_adsr_release[channel] = release;
+
+	avrsound_channel_adsr_attack_flip[channel] = 256.0 * 65536.0 / (float)(attack);
+	avrsound_channel_adsr_decay_flip[channel] = 256.0 * 65536.0 / (float)(decay);
+	avrsound_channel_adsr_release_flip[channel] = 256.0 * 65536.0 / (float)(release);
+}
+
+
+uint16_t adsr_volume(uint8_t channel) {
+	uint16_t max_volume = _avrsound_buffer_volume[channel];
+	uint32_t start_time = avrsound_channel_start_time[channel];
+	uint32_t release_time = avrsound_channel_release_time[channel];
+
+
+	uint32_t adsr_a = avrsound_channel_adsr_attack[channel];
+	uint32_t adsr_d = avrsound_channel_adsr_decay[channel];
+	uint32_t adsr_s = avrsound_channel_adsr_sustain[channel];
+	uint32_t adsr_r = avrsound_channel_adsr_release[channel];
+
+	uint32_t adsr_a_flip = avrsound_channel_adsr_attack_flip[channel];
+	uint32_t adsr_d_flip = avrsound_channel_adsr_decay_flip[channel];
+	uint32_t adsr_r_flip = avrsound_channel_adsr_release_flip[channel];
+
+	uint32_t time_diff = time - start_time;
+	uint32_t time_diff_release = time - release_time;
+	uint32_t adsr_compare_val = adsr_a;
+	uint32_t time_begin_part = 0;
+
+	if (avrsound_channel_adsr_state[channel] == ADSR_UNRELEASED) {
+		if (time_diff < adsr_a) {
+			// attack
+			return max_volume * time_diff * adsr_a_flip >> 24;
+		} else if (time_diff < adsr_a + adsr_d) {
+			// decay is falling line
+			time_begin_part = time_diff - adsr_a;
+			return max_volume - ((max_volume - adsr_s) * time_begin_part * adsr_d_flip >> 24);
+		} else {
+			return adsr_s;
+		}
+	} else if (avrsound_channel_adsr_state[channel] == ADSR_RELEASED) {
+		if (time_diff_release < adsr_r) {
+			// release
+			return (adsr_r - time_diff_release) * adsr_s * adsr_r_flip >> 24;
+		} else {
+			avrsound_channel_adsr_state[channel] = ADSR_OFF;
+			avrsound_buffer_speed[channel] = 0;
+			return 0;
+		}
+	}
+	
+	//avrsound_buffer_speed[channel] = 0;
+	return max_volume;
+}
+
 ISR (TIMER1_COMPA_vect) 
 {
 	PORTB = 255;
 	int16_t _bufsum = 0;
 	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
 		uint8_t bufspeed = avrsound_buffer_speed[i];
-		if (!bufspeed) continue;
+		if (avrsound_channel_adsr_state[i] == ADSR_OFF || !bufspeed) {
+			continue;
+		}
 
 		int8_t waveform = current_waveform[i];
 		uint8_t sample_cursor = (avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH;
 
 		int8_t sample = avrsound_buffer[waveform][sample_cursor];
-		uint8_t volume = _avrsound_buffer_volume[i];
-		_bufsum += (int16_t)((sample + 128) * volume);
+		uint8_t volume = avrsound_channel_adsr_state[i] == ADSR_OFF ? _avrsound_buffer_volume[i] : adsr_volume(i);
+		_bufsum += sample * volume;
 		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
 	}
 
-	AVRSOUND_PORT = (uint8_t)(_bufsum >> 8);
+	AVRSOUND_PORT = (_bufsum >> 8) - 128;
+	
 	time++;
 	PORTB = 0;
 }

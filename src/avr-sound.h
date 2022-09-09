@@ -11,7 +11,7 @@
  *  Ville-Pekka Lahti <ville-pekka.lahti@hotmail.com>
  */
 
- #ifndef __AVRSOUND_H__
+#ifndef __AVRSOUND_H__
 #define __AVRSOUND_H__
 
 #include <avr/interrupt.h>
@@ -29,10 +29,10 @@
 /*
 
 */
-#define AVRSOUND_BITRATE			25000
+#define AVRSOUND_BITRATE			20500
 #define AVRSOUND_PCM_SPEED_SCALE 	8
-#define AVRSOUND_MAXIMUM_SAMPLE_LENGTH 128
-#define AVRSOUND_MAX_CHANNELS       8
+#define AVRSOUND_MAXIMUM_SAMPLE_LENGTH 256
+#define AVRSOUND_MAX_CHANNELS       1
 
 #ifndef F_CPU
 #error "F_CPU is missing!"
@@ -45,8 +45,7 @@ void avrsound_set_hz(uint8_t channel, float hz);
 void avrsound_set_waveform(uint8_t channel, uint8_t waveform);
 void avrsound_finetune(uint16_t tune);
 
-
-volatile uint32_t time;
+volatile uint64_t time;
 volatile uint8_t current_waveform[AVRSOUND_MAX_CHANNELS];
 
 #endif
