@@ -45,6 +45,15 @@ volatile float finetune = 1;
 volatile uint64_t time = 0;
 volatile uint8_t current_waveform[AVRSOUND_MAX_CHANNELS];
 
+volatile uint8_t avrsound_output_buffer[AVRSOUND_OUTPUT_BUFFER_LENGTH];
+volatile int16_t avrsound_output_buffer_write_position = 0;
+volatile int16_t avrsound_output_buffer_read_position = 0;
+volatile uint16_t avrsound_output_buffer_samples_ready = 0;
+volatile uint16_t avrsound_buffer_underruns = 0;
+volatile uint16_t avrsound_buffer_underruns_reset_counter = 0;
+volatile uint16_t avrsound_buffer_underruns_reset_time = 0;
+volatile uint16_t AVRSOUND_BITRATE = AVRSOUND_DEFAULT_BITRATE;
+
 void avrsound_init() {
 
 	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
@@ -67,6 +76,7 @@ void avrsound_init() {
 }
 
 void avrsound_set_volume(uint8_t channel, uint8_t volume) {
+	if (channel >= AVRSOUND_MAX_CHANNELS) return;
 	avrsound_buffer_volume[channel] = volume;
 
 	// count total to be able to scale volumes in mixing
@@ -93,6 +103,7 @@ void avrsound_setbuffer(uint8_t waveform, uint16_t index, int8_t value) {
 }
 
 void avrsound_set_hz(uint8_t channel, float hz) {
+	if (channel > AVRSOUND_MAX_CHANNELS) return;
 	uint32_t newspeed = avrsound_buffer_speed[channel];
 	if (hz < 20) {
 		#if AVRSOUND_ADRS_ENABLED == 1
@@ -106,19 +117,19 @@ void avrsound_set_hz(uint8_t channel, float hz) {
 		#endif
 	}
 	else {
-		#if AVRSOUND_ADRS_ENABLED == 1
-		avrsound_channel_adsr_state[channel] = ADSR_UNRELEASED;
-		#endif
 		newspeed = finetune*256.0 * 256.0 * avrsound_buffer_len * hz / (AVRSOUND_BITRATE * avrsound_buffer_hz);
-		if (avrsound_buffer_speed[channel] != newspeed) {
-			avrsound_channel_start_time[channel] = time;
-		}
+		#if AVRSOUND_ADRS_ENABLED == 1
+			avrsound_channel_adsr_state[channel] = ADSR_UNRELEASED;
+			if (avrsound_buffer_speed[channel] != newspeed) {
+				avrsound_channel_start_time[channel] = time;
+			}
+		#endif
 		avrsound_buffer_speed[channel] = newspeed;
 	}
-
 }
 
 void avrsound_set_waveform(uint8_t channel, uint8_t waveform) {
+	if (channel > AVRSOUND_MAX_CHANNELS) return;
 	current_waveform[channel] = waveform;
 }
 
@@ -127,6 +138,7 @@ void avrsound_finetune(uint16_t tune) {
 }
 
 void avrsound_set_adsr(uint8_t channel, uint16_t attack, uint16_t decay, uint8_t sustain, uint16_t release) {
+	if (channel > AVRSOUND_MAX_CHANNELS) return;
 	#if AVRSOUND_ADRS_ENABLED == 1
 	avrsound_channel_adsr_attack[channel] = attack;
 	avrsound_channel_adsr_decay[channel] = decay;
@@ -141,6 +153,7 @@ void avrsound_set_adsr(uint8_t channel, uint16_t attack, uint16_t decay, uint8_t
 
 
 uint16_t adsr_volume(uint8_t channel) {
+	if (channel > AVRSOUND_MAX_CHANNELS) return;
 	uint16_t max_volume = _avrsound_buffer_volume[channel];
 	uint32_t start_time = avrsound_channel_start_time[channel];
 	uint32_t release_time = avrsound_channel_release_time[channel];
@@ -160,35 +173,79 @@ uint16_t adsr_volume(uint8_t channel) {
 	uint32_t adsr_compare_val = adsr_a;
 	uint32_t time_begin_part = 0;
 
+	int16_t volume_out = 0;
+
 	if (avrsound_channel_adsr_state[channel] == ADSR_UNRELEASED) {
 		if (time_diff < adsr_a) {
 			// attack
-			return max_volume * time_diff * adsr_a_flip >> 24;
+			volume_out = max_volume * time_diff * adsr_a_flip >> 24;
 		} else if (time_diff < adsr_a + adsr_d) {
 			// decay is falling line
 			time_begin_part = time_diff - adsr_a;
-			return max_volume - ((max_volume - adsr_s) * time_begin_part * adsr_d_flip >> 24);
+			volume_out =  max_volume - ((max_volume - adsr_s) * time_begin_part * adsr_d_flip >> 24);
 		} else {
-			return adsr_s;
+			volume_out =  adsr_s;
 		}
 	} else if (avrsound_channel_adsr_state[channel] == ADSR_RELEASED) {
 		if (time_diff_release < adsr_r) {
 			// release
-			return (adsr_r - time_diff_release) * adsr_s * adsr_r_flip >> 24;
+			volume_out =  (adsr_r - time_diff_release) * adsr_s * adsr_r_flip >> 24;
 		} else {
 			avrsound_channel_adsr_state[channel] = ADSR_OFF;
 			avrsound_buffer_speed[channel] = 0;
-			return 0;
+			volume_out =  0;
 		}
+	} else {
+		volume_out = max_volume;
 	}
 	
 	//avrsound_buffer_speed[channel] = 0;
-	return max_volume;
+	return volume_out > 0 ? (_avrsound_buffer_volume[channel] * volume_out) >> 8 : 0;
 }
+
+#define START_MEASURING_SAMPLE_CALCULATION_TIME (PORTB = 255)
+#define END_MEASURING_SAMPLE_CALCULATION_TIME (PORTB = 0)
+
+volatile uint16_t avrsound_truncate_count = 0;
 
 ISR (TIMER1_COMPA_vect) 
 {
-	PORTB = 255;
+	#if AVRSOUND_BUFFERING_ENABLED == 1
+		// ensure that we have something to play
+		if (avrsound_output_buffer_samples_ready) {
+			avrsound_output_buffer_read_position = (avrsound_output_buffer_read_position + 1) % AVRSOUND_OUTPUT_BUFFER_LENGTH;
+			AVRSOUND_PORT = avrsound_output_buffer[avrsound_output_buffer_read_position];
+			avrsound_output_buffer_samples_ready--;
+		} else {
+			avrsound_truncate_count++;
+		}
+	#else
+		AVRSOUND_PORT = avrsound_process_one_sample();
+	#endif
+	
+	time++;
+}
+
+volatile void avrsound_fill_buffer() {
+	START_MEASURING_SAMPLE_CALCULATION_TIME;
+	#if AVRSOUND_OUTPUT_BUFFER_LENGTH == 0
+		return;
+	#endif
+	while(avrsound_output_buffer_write_position != avrsound_output_buffer_read_position || !avrsound_output_buffer_samples_ready) {
+		avrsound_output_buffer_write_position = (avrsound_output_buffer_write_position + 1) % AVRSOUND_OUTPUT_BUFFER_LENGTH;
+		avrsound_output_buffer[avrsound_output_buffer_write_position] = avrsound_process_one_sample();
+		avrsound_output_buffer_samples_ready++;
+	}
+	if (avrsound_buffer_underruns) {
+		avrsound_buffer_underruns_reset_counter++;
+		if (avrsound_buffer_underruns_reset_counter > 8) {
+			avrsound_buffer_underruns = 0;
+		}
+	}
+	END_MEASURING_SAMPLE_CALCULATION_TIME;
+}
+
+volatile uint8_t avrsound_process_one_sample() {
 	int16_t _bufsum = 0;
 	for (uint8_t i=0;i<AVRSOUND_MAX_CHANNELS;i++) {
 		uint8_t bufspeed = avrsound_buffer_speed[i];
@@ -206,11 +263,8 @@ ISR (TIMER1_COMPA_vect)
 		uint8_t volume = _avrsound_buffer_volume[i];
 		#endif
 		_bufsum += sample * volume;
-		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
+		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i] * (1 + avrsound_truncate_count));
 	}
-
-	AVRSOUND_PORT = (_bufsum >> 8) - 128;
-	
-	time++;
-	PORTB = 0;
+	avrsound_truncate_count = 0;
+	return (_bufsum >> 8) - 128;
 }
