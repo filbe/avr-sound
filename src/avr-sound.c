@@ -95,14 +95,20 @@ void avrsound_setbuffer(uint8_t waveform, uint16_t index, int8_t value) {
 void avrsound_set_hz(uint8_t channel, float hz) {
 	uint32_t newspeed = avrsound_buffer_speed[channel];
 	if (hz < 20) {
-		if (avrsound_channel_adsr_state[channel] == ADSR_UNRELEASED) {
-			avrsound_channel_adsr_state[channel] = ADSR_RELEASED;
-			avrsound_channel_release_time[channel] = time;
-		}
-		avrsound_channel_start_time[channel] = time;
+		#if AVRSOUND_ADRS_ENABLED == 1
+			if (avrsound_channel_adsr_state[channel] == ADSR_UNRELEASED) {
+				avrsound_channel_adsr_state[channel] = ADSR_RELEASED;
+				avrsound_channel_release_time[channel] = time;
+			}
+			avrsound_channel_start_time[channel] = time;
+		#else
+			avrsound_buffer_speed[channel] = 0;
+		#endif
 	}
 	else {
+		#if AVRSOUND_ADRS_ENABLED == 1
 		avrsound_channel_adsr_state[channel] = ADSR_UNRELEASED;
+		#endif
 		newspeed = finetune*256.0 * 256.0 * avrsound_buffer_len * hz / (AVRSOUND_BITRATE * avrsound_buffer_hz);
 		if (avrsound_buffer_speed[channel] != newspeed) {
 			avrsound_channel_start_time[channel] = time;
@@ -121,6 +127,7 @@ void avrsound_finetune(uint16_t tune) {
 }
 
 void avrsound_set_adsr(uint8_t channel, uint16_t attack, uint16_t decay, uint8_t sustain, uint16_t release) {
+	#if AVRSOUND_ADRS_ENABLED == 1
 	avrsound_channel_adsr_attack[channel] = attack;
 	avrsound_channel_adsr_decay[channel] = decay;
 	avrsound_channel_adsr_sustain[channel] = sustain;
@@ -129,6 +136,7 @@ void avrsound_set_adsr(uint8_t channel, uint16_t attack, uint16_t decay, uint8_t
 	avrsound_channel_adsr_attack_flip[channel] = 256.0 * 65536.0 / (float)(attack);
 	avrsound_channel_adsr_decay_flip[channel] = 256.0 * 65536.0 / (float)(decay);
 	avrsound_channel_adsr_release_flip[channel] = 256.0 * 65536.0 / (float)(release);
+	#endif
 }
 
 
@@ -192,7 +200,11 @@ ISR (TIMER1_COMPA_vect)
 		uint8_t sample_cursor = (avrsound_buffercursor[i] >> 8) % AVRSOUND_MAXIMUM_SAMPLE_LENGTH;
 
 		int8_t sample = avrsound_buffer[waveform][sample_cursor];
+		#if AVRSOUND_ADRS_ENABLED == 1
 		uint8_t volume = avrsound_channel_adsr_state[i] == ADSR_OFF ? _avrsound_buffer_volume[i] : adsr_volume(i);
+		#else
+		uint8_t volume = _avrsound_buffer_volume[i];
+		#endif
 		_bufsum += sample * volume;
 		avrsound_buffercursor[i] = (avrsound_buffercursor[i] + avrsound_buffer_speed[i]);
 	}

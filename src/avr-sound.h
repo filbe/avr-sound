@@ -33,6 +33,7 @@
 #define AVRSOUND_PCM_SPEED_SCALE 	8
 #define AVRSOUND_MAXIMUM_SAMPLE_LENGTH 256
 #define AVRSOUND_MAX_CHANNELS       1
+#define AVRSOUND_ADRS_ENABLED       0
 
 #ifndef F_CPU
 #error "F_CPU is missing!"
