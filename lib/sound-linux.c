@@ -196,7 +196,7 @@ volatile uint16_t sound_truncate_count = 0;
 
 volatile delay_buffer_cursor = 0;
 
-#define DELAY_FACTOR 0.42
+#define DELAY_FACTOR 0.52
 
 volatile uint8_t sound_process_one_sample(int8_t pan) {
 

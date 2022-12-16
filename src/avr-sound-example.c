@@ -80,6 +80,7 @@ int main() {
   sound_set_pan(2, 0);
 
   while (1) {
+
     float hz1 = midi[song[(c / 2) % sizeof(song)]];
     float hz2 = midi[song2[(c / 2) % sizeof(song2)]];
     float hz3 = midi[song3[(c / 2) % sizeof(song3)]];
@@ -99,6 +100,13 @@ int main() {
 
     c++;
     usleep(55000);
+
+    if ((c) % (sizeof(song) * 2 * 4) == 0) {
+      sound_set_hz(0, 0);
+      sound_set_hz(1, 0);
+      sound_set_hz(2, 0);
+      usleep(2000000);
+    }
   }
   return 0;
 }
