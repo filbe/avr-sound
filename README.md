@@ -1,31 +1,42 @@
-# avr-sound
+# universal-synth
 
-Really simple sound drivers to AVR / Arduino platform written in C.
-Audio out only. Amplifier may be needed depending on your needs.
+Really simple cross platform audio synth written in C...
 
-# Requirements
-- AtMega328P-PU or similar, or Arduino (Uno) Board
-- R-2R resistor ladder
-    - For example, 8x 20kOhm and 8x 10kOhm resistors for 8-bit sound, but you can do 1-bit as well; edit header
-- some speakers or headphones or scope to test. 
-I'm using headphones and 3.5mm audio jack connector with jumper wires soldered in.
+...or at least attempt to do that.
 
-This library gives you a fully customizable audio out buffer and some simple functions to handle it.
-I am using this on my project (/filbe/synth/) to generate 8-bit sound. Feel free to comment and contribute if you want to.
-I have left out any sound generating functions in the library on purpose due to the well known limitations of avr's memory as well as ease to create one, as shown in the example.
+The main goal is to do scalable synth tool that you can work with on your Linux PC, and then reduce specs to run neat songs / audio stuff on your smallest microcontroller unit (MCU) with 2kb of RAM @ 16MHz 8-bit CPU, and everything sounds still pretty okay.
 
-# Installing dependencies, cloning project and burning example 
+This synth is under construction (and that's the case forever?) and this README doesn't guarantee if it works at all, but it is a mix of estimated goals and/or what it is today, so feel free to test and smash your head to the concrete wall (no injuries will be compensated in any way!).
+
+# Minimum Device Requirements on non-buffered MONO mode
+
+(meant for real-time computing, eg. MCU / FreeRTOS etc)
+
+- 16MHz MCU / CPU, output samplerate will be 20kHz maximum\*
+- 2kb of RAM
+- 16kb of persistent storage compatible with your device
+- Timer interrupts at your selected samplerate
+
+# Minimum Device Requirements on buffered STEREO mode
+
+(meant for PC's and high-end MCU's, but runs OK on mid-/low-end MCU's with reduced specs)
+
+- 200MHz MCU / CPU, output samplerate will be 44.1kHz maximum\* (estimate)
+- 4kb of RAM + buffer length worth of RAM (estimate)
+- 16kb of persistent storage compatible with your device (estimate)
+- Timer interrupts at your selected samplerate and in-built buffer OR
+- External buffer-managing library that runs on another thread with sample reading callback functionality
+
+\*increasing clock speed will allow increasing maximum samplerate that is not limited in any way!
+
+# Installing dependencies, cloning project and burning example
+
 ```
-sudo apt-get install gcc-avr avr-libc
-sudo apt-get install avrdude
+sudo apt install -y libsndfile1-dev portaudio19-dev
 git clone https://github.com/filbe/avr-sound.git
-make fuses && make flash
+cd avr-sound/src
+git checkout x64
+make example
 ```
 
 Feel free to comment and contribute if you have better ideas or solutions to the same problem.
-
-[Listen to recorded example audio](https://github.com/filbe/avr-sound/blob/main/examples/example1.mp3?raw=true)
-
-![Example 1 pic 1](https://github.com/filbe/avr-sound/blob/main/examples/example1_1.jpg?raw=true)
-![Example 1 pic 2](https://github.com/filbe/avr-sound/blob/main/examples/example1_2.jpg?raw=true)
-![Example 1 pic 3](https://github.com/filbe/avr-sound/blob/main/examples/example1_3.jpg?raw=true)
