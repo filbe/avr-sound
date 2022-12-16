@@ -80,5 +80,6 @@ extern volatile uint64_t sound_time;
 extern volatile uint8_t current_waveform[SOUND_MAX_CHANNELS];
 
 extern volatile int8_t delay_buffer[2][DELAY_BUFFER_LENGTH];
+extern volatile float sound_delay_factor;
 
 #endif /* __SOUND_LINUX_H__*/

@@ -196,7 +196,7 @@ volatile uint16_t sound_truncate_count = 0;
 
 volatile delay_buffer_cursor = 0;
 
-#define DELAY_FACTOR 0.52
+volatile float sound_delay_factor = 0.52;
 
 volatile uint8_t sound_process_one_sample(int8_t pan) {
 
@@ -269,11 +269,13 @@ volatile uint8_t sound_process_one_sample(int8_t pan) {
        112);
 
   delay_buffer[pan][delay_buffer_cursor] =
-      ((sample + (delay_sample * DELAY_FACTOR * 0.3)));
+      ((sample + (delay_sample * sound_delay_factor * 0.3)));
   delay_buffer_cursor++;
   if (delay_buffer_cursor % (DELAY_BUFFER_LENGTH) == 0) {
     delay_buffer_cursor = 0;
   }
 
-  return (int8_t)((sample + (delay_sample * DELAY_FACTOR * DELAY_FACTOR)) / 2);
+  return (int8_t)((sample +
+                   (delay_sample * sound_delay_factor * sound_delay_factor)) /
+                  2);
 }
