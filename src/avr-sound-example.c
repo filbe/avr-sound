@@ -67,7 +67,7 @@ int main() {
   sound_set_waveform(1, 1);
   sound_set_waveform(2, 2);
 
-  sound_set_volume(0, 255);
+  sound_set_volume(0, 205);
   sound_set_volume(1, 255);
   sound_set_volume(2, 255);
 
@@ -97,6 +97,13 @@ int main() {
     }
 
     sound_set_pan(2, sin(c * M_PI / sizeof(song)) * 126);
+
+    sound_set_adsr(2, cos(c * M_PI / sizeof(song)) * 126 + 150,
+                   cos(c * M_PI / sizeof(song)) * 126 + 150, 64,
+                   2500 + sin(2 * c * M_PI / sizeof(song)) * 1026);
+
+    sound_delay_factor =
+        0.50 + sin(-M_PI / 3 + (c * M_PI / sizeof(song))) * 0.2;
 
     c++;
     usleep(55000);
