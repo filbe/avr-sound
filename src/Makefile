@@ -10,7 +10,7 @@ LIBS=-lm -lrt -lasound -ljack -lpthread -lportaudio
 _DEPS = sound-linux.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = sound-linux.o
+_OBJ = *.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
