@@ -11,10 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ADSR_UNRELEASED 0
-#define ADSR_RELEASED 1
-#define ADSR_OFF 2
-
 volatile uint16_t sound_buffercursor[SOUND_MAX_CHANNELS];
 volatile float sound_buffer_jump = 1 >> 8;
 volatile uint16_t sound_buffer_speed[SOUND_MAX_CHANNELS];
@@ -41,78 +37,10 @@ volatile uint16_t sound_buffer_len = SOUND_MAXIMUM_SAMPLE_LENGTH;
 volatile int8_t sound_buffer[SOUND_MAX_CHANNELS][SOUND_MAXIMUM_SAMPLE_LENGTH];
 volatile float finetune = 1;
 
-volatile uint16_t SOUND_BITRATE = SOUND_DEFAULT_BITRATE;
 volatile uint64_t sound_time;
 volatile uint8_t current_waveform[SOUND_MAX_CHANNELS];
 
-#define DELAY_BUFFER_LENGTH 22000
 volatile int8_t delay_buffer[2][DELAY_BUFFER_LENGTH];
-
-#define SAMPLE_RATE (SOUND_BITRATE)
-#define FRAMES_PER_BUFFER (256)
-
-volatile int8_t pabuf;
-
-static void StreamFinished() { printf("Stream Completed!\n"); }
-
-void sound_init() {
-
-  for (uint8_t i = 0; i < SOUND_MAX_CHANNELS; i++) {
-    sound_set_waveform(i, 0);
-    sound_set_volume(i, 255);
-    sound_set_pan(i, 0);
-    sound_channel_adsr_state[i] = ADSR_OFF;
-  }
-
-  for (uint32_t i = 0; i < DELAY_BUFFER_LENGTH; i++) {
-    delay_buffer[0][i] = 0;
-    delay_buffer[1][i] = 0;
-  }
-
-  PaStreamParameters outputParameters;
-  PaStream *stream;
-  PaError err;
-  int i;
-  err = Pa_Initialize();
-  if (err != paNoError)
-    goto error;
-
-  outputParameters.device =
-      Pa_GetDefaultOutputDevice(); /* default output device */
-  if (outputParameters.device == paNoDevice) {
-    fprintf(stderr, "Error: No default output device.\n");
-    goto error;
-  }
-  outputParameters.channelCount = 2; /* stereo output */
-  outputParameters.sampleFormat = paInt8;
-  outputParameters.suggestedLatency =
-      Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
-  outputParameters.hostApiSpecificStreamInfo = NULL;
-
-  err = Pa_OpenStream(&stream, NULL, /* no input */
-                      &outputParameters, SAMPLE_RATE, FRAMES_PER_BUFFER,
-                      paClipOff, /* we won't output out of range samples so
-                                    don't bother clipping them */
-                      sound_fill_buffer, &pabuf);
-  if (err != paNoError)
-    goto error;
-
-  err = Pa_SetStreamFinishedCallback(stream, &StreamFinished);
-  if (err != paNoError)
-    goto error;
-
-  err = Pa_StartStream(stream);
-  if (err != paNoError)
-    goto error;
-
-  return err;
-error:
-  Pa_Terminate();
-  fprintf(stderr, "An error occured while using the portaudio stream\n");
-  fprintf(stderr, "Error number: %d\n", err);
-  fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
-  return err;
-}
 
 void sound_set_volume(uint8_t channel, uint8_t volume) {
   if (channel >= SOUND_MAX_CHANNELS)
@@ -156,8 +84,9 @@ void sound_set_hz(uint8_t channel, float hz) {
   uint32_t newspeed = sound_buffer_speed[channel];
   if (hz < 20) {
 #if SOUND_ADRS_ENABLED == 1
-    if (sound_channel_adsr_state[channel] == ADSR_UNRELEASED) {
-      sound_channel_adsr_state[channel] = ADSR_RELEASED;
+    if (sound_channel_adsr_state[channel] != ADSR_RELEASING &&
+        sound_channel_adsr_state[channel] != ADSR_OFF) {
+      sound_channel_adsr_state[channel] = ADSR_RELEASING;
       sound_channel_release_time[channel] = sound_time;
     }
     sound_channel_start_time[channel] = sound_time;
@@ -168,10 +97,14 @@ void sound_set_hz(uint8_t channel, float hz) {
     newspeed = finetune * 256.0 * 256.0 * sound_buffer_len * hz /
                (SOUND_BITRATE * sound_buffer_hz);
 #if SOUND_ADRS_ENABLED == 1
-    sound_channel_adsr_state[channel] = ADSR_UNRELEASED;
-    if (sound_buffer_speed[channel] != newspeed) {
-      sound_channel_start_time[channel] = sound_time;
+    if (sound_channel_adsr_state[channel] != ADSR_ATTACKING &&
+        sound_channel_adsr_state[channel] != ADSR_DECAYING) {
+      sound_channel_adsr_state[channel] = ADSR_ATTACKING;
+      if (sound_buffer_speed[channel] != newspeed) {
+        sound_channel_start_time[channel] = sound_time;
+      }
     }
+
 #endif
     sound_buffer_speed[channel] = newspeed;
   }
@@ -226,20 +159,23 @@ uint16_t adsr_volume(uint8_t channel) {
 
   int16_t volume_out = 0;
 
-  if (sound_channel_adsr_state[channel] == ADSR_UNRELEASED) {
+  if (sound_channel_adsr_state[channel] != ADSR_RELEASING &&
+      sound_channel_adsr_state[channel] != ADSR_OFF) {
     if (time_diff < adsr_a) {
       // attack
       volume_out = max_volume * time_diff * adsr_a_flip >> 24;
     } else if (time_diff < adsr_a + adsr_d) {
       // decay is falling line
+      sound_channel_adsr_state[channel] = ADSR_DECAYING;
       time_begin_part = time_diff - adsr_a;
       volume_out =
           max_volume -
           ((max_volume - adsr_s) * time_begin_part * adsr_d_flip >> 24);
     } else {
+      sound_channel_adsr_state[channel] = ADSR_SUSTAINING;
       volume_out = adsr_s;
     }
-  } else if (sound_channel_adsr_state[channel] == ADSR_RELEASED) {
+  } else if (sound_channel_adsr_state[channel] == ADSR_RELEASING) {
     if (time_diff_release < adsr_r) {
       // release
       volume_out = (adsr_r - time_diff_release) * adsr_s * adsr_r_flip >> 24;
@@ -257,26 +193,6 @@ uint16_t adsr_volume(uint8_t channel) {
 }
 
 volatile uint16_t sound_truncate_count = 0;
-
-volatile int sound_fill_buffer(const void *inputBuffer, void *outputBuffer,
-                               unsigned long framesPerBuffer,
-                               const PaStreamCallbackTimeInfo *timeInfo,
-                               PaStreamCallbackFlags statusFlags,
-                               void *userData) {
-  int8_t *out = (float *)outputBuffer;
-  unsigned long i;
-
-  (void)timeInfo; /* Prevent unused variable warnings. */
-  (void)statusFlags;
-  (void)inputBuffer;
-
-  for (i = 0; i < framesPerBuffer; i++) {
-    *out++ = sound_process_one_sample(0); /* left */
-    *out++ = sound_process_one_sample(1); /* right */
-    sound_time++;
-  }
-  return paContinue;
-}
 
 volatile delay_buffer_cursor = 0;
 

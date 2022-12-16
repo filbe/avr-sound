@@ -4,11 +4,10 @@
  *  Ville-Pekka Lahti <ville-pekka.lahti@hotmail.com>
  */
 
+#include "../include/sound-linux.h"
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
-
-#include <sound-linux.h>
 
 uint8_t song[] = {
     64, 65, 0,  64, 0,  62, 69, 69, 69, 69, 69, 69, 69, 0,  67, 65,
@@ -39,6 +38,7 @@ float midi[110];
 uint16_t samlen = 256;
 
 int main() {
+
   for (float i = 0; i < 110; i += 1.0) {
     midi[(uint8_t)(i)] = pow(2.0, (i - 12.0 - 69.0) * 0.083333) * 440.0;
   }
@@ -71,7 +71,7 @@ int main() {
   sound_set_volume(1, 255);
   sound_set_volume(2, 255);
 
-  sound_set_adsr(0, 400, 400, 255, 10000);
+  sound_set_adsr(0, 1400, 400, 255, 10000);
   sound_set_adsr(1, 1300, 1600, 70, 3500);
   sound_set_adsr(2, 50, 50, 64, 2500);
 
@@ -90,7 +90,7 @@ int main() {
       sound_set_hz(1, hz2 / 2);
       sound_set_hz(2, hz3);
     } else {
-      sound_set_hz(0, 0);
+      sound_set_hz(0, hz1);
       sound_set_hz(1, 0);
       sound_set_hz(2, 0);
     }
