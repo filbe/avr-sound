@@ -35,7 +35,7 @@ uint8_t song3[] = {
 
 float midi[110];
 
-uint16_t samlen = 256;
+uint16_t samlen = SOUND_MAXIMUM_SAMPLE_LENGTH;
 
 int main() {
 
@@ -49,13 +49,13 @@ int main() {
   for (int16_t b = 0; b < samlen; b++) {
     // Buffer range is -128....127
     sound_setbuffer(0, b,
-                    (sin(b / (float)(samlen)*M_PI) * 30.0 +
-                     sin(2 * b / (float)(samlen)*M_PI) * 32.0 +
-                     sin(4 * b / (float)(samlen)*M_PI) * 20.0 +
-                     sin(8 * b / (float)(samlen)*M_PI) * 15.0 +
-                     sin(16 * b / (float)(samlen)*M_PI) * 13.0)); // organ
+                    (sin(b * M_PI / (float)(samlen)) * 30.0 +
+                     sin(2 * b * M_PI / (float)(samlen)) * 32.0 +
+                     sin(4 * b * M_PI / (float)(samlen)) * 20.0 +
+                     sin(8 * b * M_PI / (float)(samlen)) * 15.0 +
+                     sin(16 * b * M_PI / (float)(samlen)) * 13.0)); // organ
 
-    sound_setbuffer(1, b, b); // SAWTOOTH
+    sound_setbuffer(1, b, b + (b / 4)); // SAWTOOTH
 
     sound_setbuffer(2, b, sin(b / (float)(samlen)*M_PI) * 127);
 
@@ -112,6 +112,7 @@ int main() {
       sound_set_hz(0, 0);
       sound_set_hz(1, 0);
       sound_set_hz(2, 0);
+      sound_delay_factor = 0.75;
       usleep(2000000);
     }
   }
