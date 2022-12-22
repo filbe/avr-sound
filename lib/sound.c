@@ -11,27 +11,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-volatile uint16_t sound_buffercursor[SOUND_MAX_CHANNELS];
-volatile float sound_buffer_jump = 1 >> 8;
-volatile uint16_t sound_buffer_speed[SOUND_MAX_CHANNELS];
+uint16_t sound_buffercursor[SOUND_MAX_CHANNELS];
+float sound_buffer_jump = 1 >> 8;
+uint16_t sound_buffer_speed[SOUND_MAX_CHANNELS];
 
-volatile uint8_t sound_buffer_volume[SOUND_MAX_CHANNELS];
-volatile uint8_t _sound_buffer_volume[SOUND_MAX_CHANNELS];
-volatile int8_t sound_buffer_pan[SOUND_MAX_CHANNELS];
+uint8_t sound_buffer_volume[SOUND_MAX_CHANNELS];
+uint8_t _sound_buffer_volume[SOUND_MAX_CHANNELS];
+int8_t sound_buffer_pan[SOUND_MAX_CHANNELS];
 
-volatile uint16_t sound_buffer_volume_sum = 0;
+uint16_t sound_buffer_volume_sum = 0;
 
-volatile float sound_buffer_hz = 440.0;
-volatile uint16_t sound_buffer_len = SOUND_MAXIMUM_SAMPLE_LENGTH;
-volatile int16_t sound_buffer[SOUND_MAX_CHANNELS][SOUND_MAXIMUM_SAMPLE_LENGTH];
-volatile float finetune = 1;
+float sound_buffer_hz = 440.0;
+uint16_t sound_buffer_len = SOUND_MAXIMUM_SAMPLE_LENGTH;
+int16_t sound_buffer[SOUND_MAX_CHANNELS][SOUND_MAXIMUM_SAMPLE_LENGTH];
+float finetune = 1;
 
-volatile uint64_t sound_time;
-volatile int16_t current_waveform[SOUND_MAX_CHANNELS];
-volatile int16_t delay_buffer[2][DELAY_BUFFER_LENGTH];
+uint64_t sound_time;
+int16_t current_waveform[SOUND_MAX_CHANNELS];
+int16_t delay_buffer[2][DELAY_BUFFER_LENGTH];
 
-volatile int16_t sound_buffer_out[SOUND_BUFFER_LENGTH];
-volatile uint16_t sound_buffer_out_cursor = 0;
+int16_t sound_buffer_out[SOUND_BUFFER_LENGTH];
+uint16_t sound_buffer_out_cursor = 0;
 
 void sound_sample_init(uint16_t sample_len, float hz) {
   // Forcing maximum sample length if trying bigger

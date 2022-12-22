@@ -1,16 +1,16 @@
 #include "sound.h"
 
-volatile uint32_t sound_adsr_channel_start_time[SOUND_MAX_CHANNELS];
-volatile uint32_t sound_adsr_channel_release_time[SOUND_MAX_CHANNELS];
-volatile uint8_t sound_adsr_channel_state[SOUND_MAX_CHANNELS];
+uint32_t sound_adsr_channel_start_time[SOUND_MAX_CHANNELS];
+uint32_t sound_adsr_channel_release_time[SOUND_MAX_CHANNELS];
+uint8_t sound_adsr_channel_state[SOUND_MAX_CHANNELS];
 
-volatile uint16_t sound_adsr_channel_attack[SOUND_MAX_CHANNELS];
-volatile uint16_t sound_adsr_channel_decay[SOUND_MAX_CHANNELS];
-volatile uint8_t sound_adsr_channel_sustain[SOUND_MAX_CHANNELS];
-volatile uint16_t sound_adsr_channel_release[SOUND_MAX_CHANNELS];
-volatile uint32_t sound_adsr_channel_attack_flip[SOUND_MAX_CHANNELS];
-volatile uint32_t sound_adsr_channel_decay_flip[SOUND_MAX_CHANNELS];
-volatile uint32_t sound_adsr_channel_release_flip[SOUND_MAX_CHANNELS];
+uint16_t sound_adsr_channel_attack[SOUND_MAX_CHANNELS];
+uint16_t sound_adsr_channel_decay[SOUND_MAX_CHANNELS];
+uint8_t sound_adsr_channel_sustain[SOUND_MAX_CHANNELS];
+uint16_t sound_adsr_channel_release[SOUND_MAX_CHANNELS];
+uint32_t sound_adsr_channel_attack_flip[SOUND_MAX_CHANNELS];
+uint32_t sound_adsr_channel_decay_flip[SOUND_MAX_CHANNELS];
+uint32_t sound_adsr_channel_release_flip[SOUND_MAX_CHANNELS];
 
 void sound_set_adsr(uint8_t channel, uint16_t attack, uint16_t decay,
                     uint8_t sustain, uint16_t release) {

@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-volatile uint16_t delay_buffer_cursor = 0;
-volatile float sound_delay_factor = 0.52;
-volatile uint32_t sound_truncate_count = 0;
+uint16_t delay_buffer_cursor = 0;
+float sound_delay_factor = 0.52;
+uint32_t sound_truncate_count = 0;
 
-volatile int16_t sound_process_one_sample(int8_t pan) {
+int16_t sound_process_one_sample(int8_t pan) {
 
   int32_t _bufsum = 0;
   for (uint8_t i = 0; i < SOUND_MAX_CHANNELS; i++) {
