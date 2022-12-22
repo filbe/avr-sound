@@ -4,7 +4,7 @@
  *  Ville-Pekka Lahti <ville-pekka.lahti@hotmail.com>
  */
 
-#include "../include/sound-linux.h"
+#include "../include/sound.h"
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
@@ -67,17 +67,17 @@ int main() {
   sound_set_waveform(1, 1);
   sound_set_waveform(2, 2);
 
-  sound_set_volume(0, 205);
-  sound_set_volume(1, 255);
-  sound_set_volume(2, 255);
+  sound_channel_set_volume(0, 205);
+  sound_channel_set_volume(1, 255);
+  sound_channel_set_volume(2, 255);
 
   sound_set_adsr(0, 1400, 400, 255, 10000);
   sound_set_adsr(1, 1300, 1600, 70, 3500);
   sound_set_adsr(2, 50, 50, 64, 2500);
 
-  sound_set_pan(0, 0);
-  sound_set_pan(1, 0);
-  sound_set_pan(2, 0);
+  sound_channel_set_pan(0, 0);
+  sound_channel_set_pan(1, 0);
+  sound_channel_set_pan(2, 0);
 
   while (1) {
 
@@ -87,32 +87,32 @@ int main() {
     // float hz4 = midi[song4[c % sizeof(song4)]];
 
     if (c % 2 == 0) {
-      sound_set_hz(0, hz1);
-      sound_set_hz(1, hz2 / 2);
-      sound_set_hz(2, hz3);
+      sound_channel_set_hz(0, hz1);
+      sound_channel_set_hz(1, hz2 / 2);
+      sound_channel_set_hz(2, hz3);
     } else {
-      sound_set_hz(0, hz1);
-      sound_set_hz(1, 0);
-      sound_set_hz(2, 0);
+      sound_channel_set_hz(0, hz1);
+      sound_channel_set_hz(1, 0);
+      sound_channel_set_hz(2, 0);
     }
 
-    sound_set_pan(2, sin(c * M_PI / sizeof(song)) * 126);
+    sound_channel_set_pan(2, sin(c * M_PI / sizeof(song)) * 126);
 
     sound_set_adsr(2, cos(c * M_PI / sizeof(song)) * 126 + 150,
                    cos(c * M_PI / sizeof(song)) * 126 + 150, 64,
                    2500 + sin(2 * c * M_PI / sizeof(song)) * 1026);
 
     sound_delay_factor =
-        0.50 + sin(-M_PI / 3 + (c * M_PI / sizeof(song))) * 0.2;
+        0.60 + sin(-M_PI / 3 + (c * M_PI / sizeof(song))) * 0.2;
 
     c++;
     usleep(55000);
 
     if ((c) % (sizeof(song) * 2 * 4) == 0) {
-      sound_set_hz(0, 0);
-      sound_set_hz(1, 0);
-      sound_set_hz(2, 0);
-      sound_delay_factor = 0.75;
+      sound_channel_set_hz(0, 0);
+      sound_channel_set_hz(1, 0);
+      sound_channel_set_hz(2, 0);
+      // sound_delay_factor = 0.75;
       usleep(2000000);
     }
   }

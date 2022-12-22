@@ -26,7 +26,7 @@
 #define SOUND_MAX_CHANNELS 3
 #define SOUND_ADRS_ENABLED 1
 
-#define FRAMES_PER_BUFFER (256)
+#define FRAMES_PER_BUFFER (64)
 
 #define SOUND_BITRATE SOUND_DEFAULT_BITRATE
 #define DELAY_BUFFER_LENGTH 25000
@@ -37,17 +37,19 @@
 #define ADSR_RELEASING 3
 #define ADSR_OFF 4
 
+#define SOUND_BUFFER_LENGTH 1024
+
 void sound_sample_init(uint16_t sample_len, float hz);
 void sound_setbuffer(uint8_t waveform, uint16_t index, int8_t value);
-void sound_set_hz(uint8_t channel, float hz);
+void sound_channel_set_hz(uint8_t channel, float hz);
 void sound_set_waveform(uint8_t channel, uint8_t waveform);
 void sound_finetune(uint16_t tune);
-void sound_set_volume(uint8_t channel, uint8_t volume);
-void sound_set_pan(uint8_t channel, int8_t pan);
+void sound_channel_set_volume(uint8_t channel, uint8_t volume);
+void sound_channel_set_pan(uint8_t channel, int8_t pan);
 void sound_set_adsr(uint8_t channel, uint16_t attack, uint16_t decay,
                     uint8_t sustain, uint16_t release);
-volatile uint8_t sound_process_one_sample(int8_t pan);
-extern volatile int sound_fill_buffer();
+volatile int16_t sound_process_one_sample(int8_t pan);
+extern int sound_fill_buffer();
 
 extern volatile uint16_t sound_buffercursor[SOUND_MAX_CHANNELS];
 extern volatile float sound_buffer_jump;
@@ -56,30 +58,31 @@ extern volatile uint16_t sound_buffer_speed[SOUND_MAX_CHANNELS];
 extern volatile uint8_t sound_buffer_volume[SOUND_MAX_CHANNELS];
 extern volatile uint8_t _sound_buffer_volume[SOUND_MAX_CHANNELS];
 extern volatile int8_t sound_buffer_pan[SOUND_MAX_CHANNELS];
-extern volatile uint32_t sound_channel_start_time[SOUND_MAX_CHANNELS];
-extern volatile uint32_t sound_channel_release_time[SOUND_MAX_CHANNELS];
-extern volatile uint8_t sound_channel_adsr_state[SOUND_MAX_CHANNELS];
+extern volatile uint32_t sound_adsr_channel_start_time[SOUND_MAX_CHANNELS];
+extern volatile uint32_t sound_adsr_channel_release_time[SOUND_MAX_CHANNELS];
+extern volatile uint8_t sound_adsr_channel_state[SOUND_MAX_CHANNELS];
 
-extern volatile uint16_t sound_channel_adsr_attack[SOUND_MAX_CHANNELS];
-extern volatile uint16_t sound_channel_adsr_decay[SOUND_MAX_CHANNELS];
-extern volatile uint8_t sound_channel_adsr_sustain[SOUND_MAX_CHANNELS];
-extern volatile uint16_t sound_channel_adsr_release[SOUND_MAX_CHANNELS];
-extern volatile uint32_t sound_channel_adsr_attack_flip[SOUND_MAX_CHANNELS];
-extern volatile uint32_t sound_channel_adsr_decay_flip[SOUND_MAX_CHANNELS];
-extern volatile uint32_t sound_channel_adsr_release_flip[SOUND_MAX_CHANNELS];
+extern volatile uint16_t sound_adsr_channel_attack[SOUND_MAX_CHANNELS];
+extern volatile uint16_t sound_adsr_channel_decay[SOUND_MAX_CHANNELS];
+extern volatile uint8_t sound_adsr_channel_sustain[SOUND_MAX_CHANNELS];
+extern volatile uint16_t sound_adsr_channel_release[SOUND_MAX_CHANNELS];
+extern volatile uint32_t sound_adsr_channel_attack_flip[SOUND_MAX_CHANNELS];
+extern volatile uint32_t sound_adsr_channel_decay_flip[SOUND_MAX_CHANNELS];
+extern volatile uint32_t sound_adsr_channel_release_flip[SOUND_MAX_CHANNELS];
+uint16_t adsr_volume(uint8_t channel);
 
 extern volatile uint16_t sound_buffer_volume_sum;
 
 extern volatile float sound_buffer_hz;
 extern volatile uint16_t sound_buffer_len;
-extern volatile int8_t sound_buffer[SOUND_MAX_CHANNELS]
-                                   [SOUND_MAXIMUM_SAMPLE_LENGTH];
+extern volatile int16_t sound_buffer[SOUND_MAX_CHANNELS]
+                                    [SOUND_MAXIMUM_SAMPLE_LENGTH];
 extern volatile float finetune;
 
 extern volatile uint64_t sound_time;
-extern volatile uint8_t current_waveform[SOUND_MAX_CHANNELS];
+extern volatile int16_t current_waveform[SOUND_MAX_CHANNELS];
 
-extern volatile int8_t delay_buffer[2][DELAY_BUFFER_LENGTH];
+extern volatile int16_t delay_buffer[2][DELAY_BUFFER_LENGTH];
 extern volatile float sound_delay_factor;
 
 #endif /* __SOUND_LINUX_H__*/
