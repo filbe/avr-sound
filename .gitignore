@@ -53,4 +53,5 @@ dkms.conf
 
 **/example
 **/*.o
+*.o
 **/.vscode

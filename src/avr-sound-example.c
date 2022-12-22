@@ -4,7 +4,7 @@
  *  Ville-Pekka Lahti <ville-pekka.lahti@hotmail.com>
  */
 
-#include "../include/sound.h"
+#include "sound.h"
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
@@ -35,8 +35,6 @@ uint8_t song3[] = {
 
 float midi[110];
 
-uint16_t samlen = SOUND_MAXIMUM_SAMPLE_LENGTH;
-
 int main() {
 
   for (float i = 0; i < 110; i += 1.0) {
@@ -44,35 +42,37 @@ int main() {
   }
 
   sound_init();
-  sound_sample_init(samlen, 440.0);
+  uint16_t samlen = SOUND_MAXIMUM_SAMPLE_LENGTH;
 
   for (int16_t b = 0; b < samlen; b++) {
     // Buffer range is -128....127
-    sound_setbuffer(0, b,
-                    (sin(b * M_PI / (float)(samlen)) * 30.0 +
-                     sin(2 * b * M_PI / (float)(samlen)) * 32.0 +
-                     sin(4 * b * M_PI / (float)(samlen)) * 20.0 +
-                     sin(8 * b * M_PI / (float)(samlen)) * 15.0 +
-                     sin(16 * b * M_PI / (float)(samlen)) * 13.0)); // organ
+    sound_set_waveform_sample(
+        0, b,
+        (sin(b * M_PI / (float)(samlen)) * 30.0 +
+         sin(2 * b * M_PI / (float)(samlen)) * 32.0 +
+         sin(4 * b * M_PI / (float)(samlen)) * 20.0 +
+         sin(8 * b * M_PI / (float)(samlen)) * 15.0 +
+         sin(16 * b * M_PI / (float)(samlen)) * 13.0)); // organ
 
-    sound_setbuffer(1, b, b + (b / 4)); // SAWTOOTH
+    sound_set_waveform_sample(1, b, b + (b / 4)); // SAWTOOTH
 
-    sound_setbuffer(2, b, sin(b / (float)(samlen)*M_PI) * 127);
+    sound_set_waveform_sample(2, b, sin(b / (float)(samlen)*M_PI) * 127);
 
-    // sound_setbuffer(1, b, b < samlen / 2 ? -128 : 127); // SQUARE WAVE
+    // sound_set_waveform_sample(1, b, b < samlen / 2 ? -128 : 127); // SQUARE
+    // WAVE
   }
 
   uint32_t c = 0;
-  sound_set_waveform(0, 0);
-  sound_set_waveform(1, 1);
-  sound_set_waveform(2, 2);
+  sound_channel_set_waveform(0, 0);
+  sound_channel_set_waveform(1, 1);
+  sound_channel_set_waveform(2, 2);
 
   sound_channel_set_volume(0, 205);
   sound_channel_set_volume(1, 255);
   sound_channel_set_volume(2, 255);
 
-  sound_set_adsr(0, 1400, 400, 255, 10000);
-  sound_set_adsr(1, 1300, 1600, 70, 3500);
+  sound_set_adsr(0, 400, 400, 255, 10000);
+  sound_set_adsr(1, 100, 1600, 70, 5500);
   sound_set_adsr(2, 50, 50, 64, 2500);
 
   sound_channel_set_pan(0, 0);

@@ -1,4 +1,17 @@
 #include "sound.h"
+/**
+ * ADSR -module
+ *
+ *      /\ DECAY
+ *     /  \/     SUSTAIN
+ *    /    \______/_____
+ *   / \                 \ RELEASE
+ *  / ATTACK              \ /
+ * /                       \
+ *
+ *
+
+ */
 
 uint32_t sound_adsr_channel_start_time[SOUND_MAX_CHANNELS];
 uint32_t sound_adsr_channel_release_time[SOUND_MAX_CHANNELS];
@@ -31,7 +44,7 @@ void sound_set_adsr(uint8_t channel, uint16_t attack, uint16_t decay,
 uint16_t adsr_volume(uint8_t channel) {
   if (channel > SOUND_MAX_CHANNELS)
     return 0;
-  uint16_t max_volume = _sound_buffer_volume[channel];
+  uint16_t max_volume = _sound_channel_volume[channel];
   uint32_t start_time = sound_adsr_channel_start_time[channel];
   uint32_t release_time = sound_adsr_channel_release_time[channel];
 
@@ -73,13 +86,14 @@ uint16_t adsr_volume(uint8_t channel) {
       volume_out = (adsr_r - time_diff_release) * adsr_s * adsr_r_flip >> 24;
     } else {
       sound_adsr_channel_state[channel] = ADSR_OFF;
-      sound_buffer_speed[channel] = 0;
+      sound_channel_waveform_sample_jump[channel] = 0;
       volume_out = 0;
     }
   } else {
     volume_out = max_volume;
   }
 
-  // sound_buffer_speed[channel] = 0;
-  return volume_out > 0 ? (_sound_buffer_volume[channel] * volume_out) >> 8 : 0;
+  // sound_channel_waveform_sample_jump[channel] = 0;
+  return volume_out > 0 ? (_sound_channel_volume[channel] * volume_out) >> 8
+                        : 0;
 }

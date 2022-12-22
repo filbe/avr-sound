@@ -6,9 +6,16 @@
 #include <stdlib.h>
 
 int16_t pabuf;
+
+int16_t sound_buffer_out[SOUND_BUFFER_LENGTH];
+uint16_t sound_buffer_out_cursor = 0;
+
+uint16_t sound_channel_waveform_cursor[SOUND_MAX_CHANNELS];
+uint16_t sound_channel_waveform_sample_jump[SOUND_MAX_CHANNELS];
+
 static void StreamFinished() { printf("Stream Completed!\n"); }
 #define FRAMES_PER_BUFFER (64)
-void init_buffer_library() {
+void sound_buffer_external_init() {
   PaStreamParameters outputParameters;
   PaStream *stream;
   PaError err;
@@ -68,7 +75,7 @@ int sound_fill_buffer(const void *inputBuffer, int16_t *outputBuffer,
   for (i = 0; i < framesPerBuffer; i++) {
     *out++ = sound_process_one_sample(0); /* left */
     *out++ = sound_process_one_sample(1); /* right */
-    sound_time++;
+    sound_time_tick();
   }
   return paContinue;
 }
