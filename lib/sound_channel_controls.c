@@ -23,6 +23,8 @@ uint8_t sound_channel_volume[SOUND_MAX_CHANNELS];
 uint8_t _sound_channel_volume[SOUND_MAX_CHANNELS];
 int8_t sound_channel_pan[SOUND_MAX_CHANNELS];
 
+uint8_t sound_channel_reverb[SOUND_MAX_CHANNELS];
+
 int16_t sound_channel_waveform[SOUND_MAX_CHANNELS];
 
 void sound_channel_set_volume(uint8_t channel, uint8_t volume) {
@@ -47,6 +49,12 @@ void sound_channel_set_pan(uint8_t channel, int8_t pan) {
   if (channel >= SOUND_MAX_CHANNELS)
     return;
   sound_channel_pan[channel] = pan;
+}
+
+void sound_channel_set_reverb(uint8_t channel, uint8_t reverb) {
+  if (channel >= SOUND_MAX_CHANNELS)
+    return;
+  sound_channel_reverb[channel] = reverb;
 }
 
 void sound_channel_set_hz(uint8_t channel, float hz) {

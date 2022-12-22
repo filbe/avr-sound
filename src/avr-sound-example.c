@@ -79,6 +79,12 @@ int main() {
   sound_channel_set_pan(1, 0);
   sound_channel_set_pan(2, 0);
 
+  sound_fx_reverb_set_feedback_factor(SOUND_MAX_CHANNELS + 0, 0.4); // LEFT
+  sound_fx_reverb_set_feedback_factor(SOUND_MAX_CHANNELS + 1, 0.3); // RIGHT
+
+  sound_fx_reverb_set_feedback_factor(4, 0.8);
+  sound_fx_reverb_set_feedback_factor(5, 0.8);
+
   while (1) {
 
     float hz1 = midi[song[(c / 2) % sizeof(song)]];
@@ -98,11 +104,7 @@ int main() {
 
     sound_channel_set_pan(2, sin(c * M_PI / sizeof(song)) * 126);
 
-    sound_set_adsr(2, cos(c * M_PI / sizeof(song)) * 126 + 150,
-                   cos(c * M_PI / sizeof(song)) * 126 + 150, 64,
-                   2500 + sin(2 * c * M_PI / sizeof(song)) * 1026);
-
-    sound_mixer_fx_master_delay_factor =
+    sound_mixer_fx_master_reverb_factor =
         0.60 + sin(-M_PI / 3 + (c * M_PI / sizeof(song))) * 0.2;
 
     c++;
@@ -112,8 +114,8 @@ int main() {
       sound_channel_set_hz(0, 0);
       sound_channel_set_hz(1, 0);
       sound_channel_set_hz(2, 0);
-      // sound_mixer_fx_master_delay_factor = 0.75;
-      usleep(2000000);
+      // sound_mixer_fx_master_reverb_factor = 0.75;
+      usleep(5000000);
     }
   }
   return 0;
