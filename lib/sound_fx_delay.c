@@ -8,7 +8,7 @@ float feedback_factor[SOUND_FX_CHS];
 
 int16_t fx_delay_buf_cur[SOUND_FX_CHS];
 
-void sound_fx_reverb_init() {
+void sound_fx_delay_init() {
   memset(&fx_buffer, 0, sizeof(int16_t) * SOUND_FX_CHS * BUF_LEN);
   for (uint8_t i = 0; i < SOUND_FX_CHS; i++) {
     feedback_factor[i] = 0;
@@ -16,27 +16,27 @@ void sound_fx_reverb_init() {
   }
 }
 
-void sound_fx_reverb_init_ch(uint8_t ch) {
+void sound_fx_delay_init_ch(uint8_t ch) {
   memset(&fx_buffer[ch], 0, sizeof(int16_t) * BUF_LEN);
 }
 
-void sound_fx_reverb_set_feedback_factor(uint8_t ch, float f) {
-  sound_fx_reverb_init_ch(ch);
+void sound_fx_delay_set_feedback_factor(uint8_t ch, float f) {
+  sound_fx_delay_init_ch(ch);
   feedback_factor[ch] = f;
 }
 
-#define REVERB_COMPLEXITY 5
-#define COMPONENT_FACTOR (1.0 / REVERB_COMPLEXITY)
+#define DELAY_COMPLEXITY 4
+#define COMPONENT_FACTOR (1.0 / DELAY_COMPLEXITY)
 
-int16_t sound_fx_reverb_feed(uint8_t ch, int16_t sample) {
-  int16_t wet = sample;
-  for (uint8_t i = 0; i < REVERB_COMPLEXITY; i++) {
+int16_t sound_fx_delay_feed(uint8_t ch, int16_t sample) {
+  int16_t wet = 0;
+  for (uint8_t i = 0; i < DELAY_COMPLEXITY; i++) {
     wet += fx_buffer[ch][(uint16_t)((fx_delay_buf_cur[ch] +
-                                     (i * BUF_LEN / COMPONENT_FACTOR))) %
+                                     ((i * BUF_LEN) / COMPONENT_FACTOR))) %
                          BUF_LEN] *
            COMPONENT_FACTOR;
   }
-  fx_buffer[ch][fx_delay_buf_cur[ch]] = (wet * feedback_factor[ch]);
+  fx_buffer[ch][fx_delay_buf_cur[ch]] = (wet * feedback_factor[ch]) + sample;
   // printf("%d\n", fx_buffer[ch][fx_delay_buf_cur[ch]]);
   //  mix feedback and save back to buffer
   int16_t mix_feedback = fx_buffer[ch][fx_delay_buf_cur[ch]];

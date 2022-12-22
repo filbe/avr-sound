@@ -11,10 +11,10 @@ void sound_init() {
     sound_channel_set_waveform(i, 0);
     sound_channel_set_volume(i, 255);
     sound_channel_set_pan(i, 0);
-    sound_channel_set_reverb(i, 0);
+    sound_channel_set_delay(i, 0);
     sound_adsr_channel_state[i] = ADSR_OFF;
   }
 
-  sound_fx_reverb_init();
+  sound_fx_delay_init();
   sound_buffer_external_init();
 }

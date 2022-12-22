@@ -79,11 +79,14 @@ int main() {
   sound_channel_set_pan(1, 0);
   sound_channel_set_pan(2, 0);
 
-  sound_fx_reverb_set_feedback_factor(SOUND_MAX_CHANNELS + 0, 0.4); // LEFT
-  sound_fx_reverb_set_feedback_factor(SOUND_MAX_CHANNELS + 1, 0.3); // RIGHT
+  // sound_fx_delay_set_feedback_factor(SOUND_MAX_CHANNELS + 0, 0.6); // LEFT
+  // sound_fx_delay_set_feedback_factor(SOUND_MAX_CHANNELS + 1, 0.6); // RIGHT
 
-  sound_fx_reverb_set_feedback_factor(4, 0.8);
-  sound_fx_reverb_set_feedback_factor(5, 0.8);
+  sound_fx_delay_set_feedback_factor(2, 0.7);
+  sound_fx_delay_set_feedback_factor(3, 0.7);
+
+  // sound_fx_delay_set_feedback_factor(4, 0.7);
+  // sound_fx_delay_set_feedback_factor(5, 0.7);
 
   while (1) {
 
@@ -104,18 +107,18 @@ int main() {
 
     sound_channel_set_pan(2, sin(c * M_PI / sizeof(song)) * 126);
 
-    sound_mixer_fx_master_reverb_factor =
+    sound_mixer_fx_master_delay_factor =
         0.60 + sin(-M_PI / 3 + (c * M_PI / sizeof(song))) * 0.2;
 
     c++;
-    usleep(55000);
+    usleep(50000);
 
     if ((c) % (sizeof(song) * 2 * 4) == 0) {
       sound_channel_set_hz(0, 0);
       sound_channel_set_hz(1, 0);
       sound_channel_set_hz(2, 0);
-      // sound_mixer_fx_master_reverb_factor = 0.75;
-      usleep(5000000);
+      // sound_mixer_fx_master_delay_factor = 0.75;
+      usleep(1800000);
     }
   }
   return 0;

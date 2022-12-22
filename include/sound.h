@@ -11,7 +11,7 @@
 
 #include "sound-adsr.h"
 #include "sound-channel.h"
-#include "sound-fx-reverb.h"
+#include "sound-fx-delay.h"
 #include "sound-init.h"
 #include "sound-time.h"
 #include "sound-waveform.h"
@@ -36,7 +36,7 @@
 
 #define SOUND_BITRATE SOUND_DEFAULT_BITRATE
 
-#define SOUND_BUFFER_LENGTH 256
+#define SOUND_BUFFER_LENGTH 1024
 
 void sound_set_waveform_sample(uint8_t waveform, uint16_t index, int8_t value);
 
@@ -50,7 +50,6 @@ extern uint16_t sound_channel_waveform_sample_jump[SOUND_MAX_CHANNELS];
 
 extern uint8_t sound_channel_volume[SOUND_MAX_CHANNELS];
 extern uint8_t _sound_channel_volume[SOUND_MAX_CHANNELS];
-extern int8_t sound_channel_pan[SOUND_MAX_CHANNELS];
 
 extern int16_t sound_waveform[SOUND_MAX_CHANNELS][SOUND_WAVEFORM_MAX_LENGTH];
 extern float finetune;
@@ -58,6 +57,6 @@ extern float finetune;
 extern uint64_t sound_time;
 extern int16_t sound_channel_waveform[SOUND_MAX_CHANNELS];
 
-extern float sound_mixer_fx_master_reverb_factor;
+extern float sound_mixer_fx_master_delay_factor;
 
 #endif /* __SOUND_H__ */

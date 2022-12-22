@@ -7,9 +7,6 @@
 
 int16_t pabuf;
 
-int16_t sound_buffer_out[SOUND_BUFFER_LENGTH];
-uint16_t sound_buffer_out_cursor = 0;
-
 uint16_t sound_channel_waveform_cursor[SOUND_MAX_CHANNELS];
 uint16_t sound_channel_waveform_sample_jump[SOUND_MAX_CHANNELS];
 
