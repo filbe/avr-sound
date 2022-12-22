@@ -42,7 +42,7 @@ int main() {
   }
 
   sound_init();
-  uint16_t samlen = SOUND_MAXIMUM_SAMPLE_LENGTH;
+  uint16_t samlen = SOUND_WAVEFORM_MAX_LENGTH;
 
   for (int16_t b = 0; b < samlen; b++) {
     // Buffer range is -128....127
@@ -102,7 +102,7 @@ int main() {
                    cos(c * M_PI / sizeof(song)) * 126 + 150, 64,
                    2500 + sin(2 * c * M_PI / sizeof(song)) * 1026);
 
-    sound_delay_factor =
+    sound_mixer_fx_master_delay_factor =
         0.60 + sin(-M_PI / 3 + (c * M_PI / sizeof(song))) * 0.2;
 
     c++;
@@ -112,7 +112,7 @@ int main() {
       sound_channel_set_hz(0, 0);
       sound_channel_set_hz(1, 0);
       sound_channel_set_hz(2, 0);
-      // sound_delay_factor = 0.75;
+      // sound_mixer_fx_master_delay_factor = 0.75;
       usleep(2000000);
     }
   }

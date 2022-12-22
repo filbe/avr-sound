@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 uint16_t sound_mixer_delay_buffer_cursor = 0;
-float sound_delay_factor = 0.52;
+float sound_mixer_fx_master_delay_factor = 0;
 uint32_t sound_truncate_count = 0;
 float finetune = 1;
 
@@ -29,7 +29,7 @@ int16_t sound_process_one_sample(int8_t pan) {
 
     int16_t waveform = sound_channel_waveform[i];
     uint16_t sample_cursor =
-        (sound_channel_waveform_cursor[i] >> 8) % SOUND_MAXIMUM_SAMPLE_LENGTH;
+        (sound_channel_waveform_cursor[i] >> 8) % SOUND_WAVEFORM_MAX_LENGTH;
 
     int16_t sample = sound_waveform[waveform][sample_cursor];
 #if SOUND_ADRS_ENABLED == 1
@@ -94,16 +94,17 @@ int16_t sound_process_one_sample(int8_t pan) {
        112);
 
   sound_mixer_delay_buffer[pan][sound_mixer_delay_buffer_cursor] =
-      ((sample + (delay_sample * sound_delay_factor * 0.3)));
+      ((sample + (delay_sample * sound_mixer_fx_master_delay_factor * 0.3)));
   sound_mixer_delay_buffer_cursor++;
   if (sound_mixer_delay_buffer_cursor % (sound_mixer_delay_buffer_length) ==
       0) {
     sound_mixer_delay_buffer_cursor = 0;
   }
 
-  int16_t out = (int16_t)((sample + (delay_sample * sound_delay_factor *
-                                     sound_delay_factor)) /
-                          2);
+  int16_t out =
+      (int16_t)((sample + (delay_sample * sound_mixer_fx_master_delay_factor *
+                           sound_mixer_fx_master_delay_factor)) /
+                2);
 
   return out;
 }

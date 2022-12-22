@@ -12,6 +12,7 @@
 #include "sound-adsr.h"
 #include "sound-init.h"
 #include "sound-time.h"
+#include "sound-waveform.h"
 #include <stdint.h>
 #include <string.h>
 #define SOUND_PORT PORTD
@@ -26,7 +27,6 @@
   (~SOUND_PINMASK_BE) >> (SOUND_PINS_IN_PORT - SOUND_BITS)
 
 #define SOUND_DEFAULT_BITRATE 44100
-#define SOUND_MAXIMUM_SAMPLE_LENGTH 256
 
 #define SOUND_ADRS_ENABLED 1
 
@@ -54,13 +54,13 @@ extern uint8_t sound_channel_volume[SOUND_MAX_CHANNELS];
 extern uint8_t _sound_channel_volume[SOUND_MAX_CHANNELS];
 extern int8_t sound_channel_pan[SOUND_MAX_CHANNELS];
 
-extern int16_t sound_waveform[SOUND_MAX_CHANNELS][SOUND_MAXIMUM_SAMPLE_LENGTH];
+extern int16_t sound_waveform[SOUND_MAX_CHANNELS][SOUND_WAVEFORM_MAX_LENGTH];
 extern float finetune;
 
 extern uint64_t sound_time;
 extern int16_t sound_channel_waveform[SOUND_MAX_CHANNELS];
 
 extern int16_t sound_mixer_delay_buffer[2][sound_mixer_delay_buffer_length];
-extern float sound_delay_factor;
+extern float sound_mixer_fx_master_delay_factor;
 
 #endif /* __SOUND_H__ */

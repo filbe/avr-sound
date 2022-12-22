@@ -65,8 +65,8 @@ void sound_channel_set_hz(uint8_t channel, float hz) {
     sound_channel_waveform_sample_jump[channel] = 0;
 #endif
   } else {
-    newspeed = finetune * 256.0 * 256.0 * SOUND_MAXIMUM_SAMPLE_LENGTH * hz /
-               (SOUND_BITRATE * SOUND_MAXIMUM_SAMPLE_LENGTH);
+    newspeed = finetune * 256.0 * 256.0 * SOUND_WAVEFORM_MAX_LENGTH * hz /
+               (SOUND_BITRATE * SOUND_WAVEFORM_MAX_LENGTH);
 #if SOUND_ADRS_ENABLED == 1
     if (sound_adsr_channel_state[channel] != ADSR_ATTACKING &&
         sound_adsr_channel_state[channel] != ADSR_DECAYING) {
