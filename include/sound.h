@@ -12,6 +12,7 @@
 #include "sound-adsr.h"
 #include "sound-channel.h"
 #include "sound-fx-delay.h"
+#include "sound-fx-porta.h"
 #include "sound-init.h"
 #include "sound-time.h"
 #include "sound-waveform.h"

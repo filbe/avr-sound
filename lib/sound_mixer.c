@@ -39,8 +39,8 @@ int16_t sound_process_one_sample(int8_t pan) {
 
     _bufsum += volume * (channel_dry + channel_delay);
 
-    sound_channel_waveform_cursor[i] = sound_channel_waveform_cursor[i] +
-                                       sound_channel_waveform_sample_jump[i];
+    sound_channel_waveform_cursor[i] =
+        sound_channel_waveform_cursor[i] + bufspeed;
   }
 
   int32_t sample = _bufsum;

@@ -13,6 +13,9 @@ void sound_init() {
     sound_channel_set_pan(i, 0);
     sound_channel_set_delay(i, 0);
     sound_adsr_channel_state[i] = ADSR_OFF;
+    sound_porta_channel_start_time[i] = 0;
+    sound_channel_waveform_sample_jump[i] = 0;
+    sound_channel_waveform_sample_jump_target[i] = 0;
   }
 
   sound_fx_delay_init();

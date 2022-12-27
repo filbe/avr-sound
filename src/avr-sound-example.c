@@ -10,11 +10,11 @@
 #include <unistd.h>
 
 uint8_t song[] = {
-    64, 65, 0,  64, 0,  62, 69, 69, 69, 69, 69, 69, 69, 0,  67, 65,
-    67, 67, 0,  72, 72, 67, 76, 76, 76, 76, 76, 76, 76, 0,  74, 76,
+    64, 65, 65, 64, 64, 62, 69, 69, 69, 69, 69, 69, 69, 69, 67, 65,
+    67, 67, 67, 72, 72, 67, 76, 76, 76, 76, 76, 76, 76, 76, 74, 76,
 
-    76, 77, 77, 76, 76, 74, 69, 69, 69, 69, 69, 69, 69, 0,  67, 65,
-    67, 67, 67, 67, 67, 0,  74, 76, 77, 76, 74, 69, 67, 65, 64, 60,
+    76, 77, 77, 76, 76, 74, 69, 69, 69, 69, 69, 69, 69, 69, 67, 65,
+    67, 67, 67, 67, 67, 67, 74, 76, 77, 76, 74, 69, 67, 65, 64, 60,
 };
 
 uint8_t song2[] = {
@@ -56,14 +56,15 @@ int main() {
 
     sound_set_waveform_sample(1, b, b + (b / 4)); // SAWTOOTH
 
-    sound_set_waveform_sample(2, b, sin(b / (float)(samlen)*M_PI) * 127);
+    sound_set_waveform_sample(
+        2, b, sin((float)(b) / (float)(samlen)*3.14159265358) * 120);
 
     // sound_set_waveform_sample(1, b, b < samlen / 2 ? -128 : 127); // SQUARE
     // WAVE
   }
 
   uint32_t c = 0;
-  sound_channel_set_waveform(0, 0);
+  sound_channel_set_waveform(0, 2);
   sound_channel_set_waveform(1, 1);
   sound_channel_set_waveform(2, 2);
 
@@ -71,7 +72,7 @@ int main() {
   sound_channel_set_volume(1, 255);
   sound_channel_set_volume(2, 255);
 
-  sound_set_adsr(0, 400, 400, 255, 10000);
+  sound_set_adsr(0, 400, 400, 255, 4000);
   sound_set_adsr(1, 100, 1600, 70, 5500);
   sound_set_adsr(2, 50, 50, 64, 2500);
 
@@ -82,11 +83,16 @@ int main() {
   // sound_fx_delay_set_feedback_factor(SOUND_MAX_CHANNELS + 0, 0.6); // LEFT
   // sound_fx_delay_set_feedback_factor(SOUND_MAX_CHANNELS + 1, 0.6); // RIGHT
 
+  sound_fx_delay_set_feedback_factor(0, 0.7);
+  sound_fx_delay_set_feedback_factor(1, 0.7);
+
   sound_fx_delay_set_feedback_factor(2, 0.7);
   sound_fx_delay_set_feedback_factor(3, 0.7);
 
   // sound_fx_delay_set_feedback_factor(4, 0.7);
   // sound_fx_delay_set_feedback_factor(5, 0.7);
+
+  sound_channel_set_porta(0, 1800);
 
   while (1) {
 
@@ -97,6 +103,7 @@ int main() {
 
     if (c % 2 == 0) {
       sound_channel_set_hz(0, hz1);
+
       sound_channel_set_hz(1, hz2 / 2);
       sound_channel_set_hz(2, hz3);
     } else {
@@ -111,9 +118,9 @@ int main() {
         0.60 + sin(-M_PI / 3 + (c * M_PI / sizeof(song))) * 0.2;
 
     c++;
-    usleep(50000);
+    usleep(52000);
 
-    if ((c) % (sizeof(song) * 2 * 4) == 0) {
+    if ((c) % (sizeof(song) * 2 * 1) == 0) {
       sound_channel_set_hz(0, 0);
       sound_channel_set_hz(1, 0);
       sound_channel_set_hz(2, 0);

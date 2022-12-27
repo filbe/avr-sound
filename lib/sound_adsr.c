@@ -86,7 +86,7 @@ uint16_t adsr_volume(uint8_t channel) {
       volume_out = (adsr_r - time_diff_release) * adsr_s * adsr_r_flip >> 24;
     } else {
       sound_adsr_channel_state[channel] = ADSR_OFF;
-      sound_channel_waveform_sample_jump[channel] = 0;
+      sound_channel_waveform_sample_jump_target[channel] = 0;
       volume_out = 0;
     }
   } else {

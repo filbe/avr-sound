@@ -7,9 +7,6 @@
 
 int16_t pabuf;
 
-uint16_t sound_channel_waveform_cursor[SOUND_MAX_CHANNELS];
-uint16_t sound_channel_waveform_sample_jump[SOUND_MAX_CHANNELS];
-
 static void StreamFinished() { printf("Stream Completed!\n"); }
 #define FRAMES_PER_BUFFER (64)
 void sound_buffer_external_init() {
