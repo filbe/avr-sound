@@ -46,17 +46,9 @@ void sound_finetune(uint16_t tune);
 int16_t sound_process_one_sample(int8_t pan);
 extern int sound_fill_buffer();
 
-extern uint16_t sound_channel_waveform_cursor[SOUND_MAX_CHANNELS];
-extern uint16_t sound_channel_waveform_sample_jump[SOUND_MAX_CHANNELS];
-
-extern uint8_t sound_channel_volume[SOUND_MAX_CHANNELS];
-extern uint8_t _sound_channel_volume[SOUND_MAX_CHANNELS];
-
-extern int16_t sound_waveform[SOUND_MAX_CHANNELS][SOUND_WAVEFORM_MAX_LENGTH];
 extern float finetune;
 
 extern uint64_t sound_time;
-extern int16_t sound_channel_waveform[SOUND_MAX_CHANNELS];
 
 extern float sound_mixer_fx_master_delay_factor;
 

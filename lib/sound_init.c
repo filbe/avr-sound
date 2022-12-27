@@ -8,14 +8,12 @@
 void sound_init() {
 
   for (uint8_t i = 0; i < SOUND_MAX_CHANNELS; i++) {
+    SoundChannel *ch = sound_get_channel(i);
     sound_channel_set_waveform(i, 0);
-    sound_channel_set_volume(i, 255);
+    sound_channel_set_volume(i, 0);
     sound_channel_set_pan(i, 0);
     sound_channel_set_delay(i, 0);
-    sound_adsr_channel_state[i] = ADSR_OFF;
-    sound_porta_channel_start_time[i] = 0;
-    sound_channel_waveform_sample_jump[i] = 0;
-    sound_channel_waveform_sample_jump_target[i] = 0;
+    ch->adsr.state = ADSR_OFF;
   }
 
   sound_fx_delay_init();
