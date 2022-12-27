@@ -17,7 +17,6 @@
  *
  */
 
-#include "sound-fx-porta.h"
 #include "sound.h"
 
 SoundChannel channels[SOUND_MAX_CHANNELS];
