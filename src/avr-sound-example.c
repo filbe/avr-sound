@@ -73,7 +73,7 @@ int main() {
   sound_channel_set_volume(2, 255);
 
   sound_set_adsr(0, 400, 400, 255, 4000);
-  sound_set_adsr(1, 100, 1600, 70, 5500);
+  sound_set_adsr(1, 100, 1600, 70, 2500);
   sound_set_adsr(2, 50, 50, 64, 2500);
 
   sound_channel_set_pan(0, 0);

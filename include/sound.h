@@ -43,7 +43,7 @@ void sound_set_waveform_sample(uint8_t waveform, uint16_t index, int8_t value);
 
 void sound_finetune(uint16_t tune);
 
-int16_t sound_process_one_sample(int8_t pan);
+uint16_t sound_process_one_sample(int8_t pan);
 extern int sound_fill_buffer();
 
 extern float finetune;
